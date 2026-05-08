@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useTemplates } from "./templates/store";
 
 export function CloseButton({ onClick }: { onClick?: () => void }) {
   return (
@@ -20,19 +21,15 @@ export function CloseButton({ onClick }: { onClick?: () => void }) {
   );
 }
 
-export function AdvancedToggle({
-  defaultOn = true,
-  label = "高级设置",
-}: {
-  defaultOn?: boolean;
-  label?: string;
-}) {
-  const [on, setOn] = useState(defaultOn);
+export function AdvancedToggle({ label = "高级设置" }: { label?: string }) {
+  const { globalAdvanced, setGlobalAdvanced } = useTemplates();
+  const on = globalAdvanced;
   return (
     <button
       type="button"
-      onClick={() => setOn((v) => !v)}
+      onClick={() => setGlobalAdvanced(!on)}
       aria-pressed={on}
+      title={on ? "关闭后将折叠所有卡片的高级参数" : "开启后将展开所有卡片的高级参数"}
       className={cn(
         "inline-flex h-9 items-center gap-2 rounded-full border px-4 text-[13px] font-medium transition-all duration-200",
         on
@@ -84,4 +81,10 @@ export function TabPill({
       {children}
     </button>
   );
+}
+
+// kept for backwards-compat with previous controlled toggle (no longer used)
+export function _LocalAdvancedToggleLegacy(_: { defaultOn?: boolean; label?: string }) {
+  const [_on, _setOn] = useState(false);
+  return null;
 }

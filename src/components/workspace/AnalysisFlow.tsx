@@ -1,43 +1,20 @@
 import { Check, Circle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useTemplates } from "./templates/store";
+import type { ModuleKey } from "./templates/types";
 
 interface FlowItem {
+  key: ModuleKey;
   label: string;
-  progress: string;
-  status: "active" | "done" | "todo";
   color: string;
   icon: React.ReactNode;
 }
 
 const flow: FlowItem[] = [
-  {
-    label: "电磁性能",
-    progress: "12/15",
-    status: "active",
-    color: "oklch(0.62 0.22 295)",
-    icon: <span className="text-sm">📈</span>,
-  },
-  {
-    label: "温升",
-    progress: "2/4",
-    status: "done",
-    color: "oklch(0.7 0.18 230)",
-    icon: <span className="text-sm">🌡️</span>,
-  },
-  {
-    label: "应力",
-    progress: "0/1",
-    status: "todo",
-    color: "oklch(0.7 0.16 160)",
-    icon: <span className="text-sm">⬇️</span>,
-  },
-  {
-    label: "振动噪音",
-    progress: "0/4",
-    status: "todo",
-    color: "oklch(0.7 0.18 40)",
-    icon: <span className="text-sm">🔊</span>,
-  },
+  { key: "em", label: "电磁性能", color: "oklch(0.62 0.22 295)", icon: <span className="text-sm">📈</span> },
+  { key: "thermal", label: "温升", color: "oklch(0.7 0.18 230)", icon: <span className="text-sm">🌡️</span> },
+  { key: "stress", label: "应力", color: "oklch(0.7 0.16 160)", icon: <span className="text-sm">⬇️</span> },
+  { key: "nvh", label: "振动噪音", color: "oklch(0.7 0.18 40)", icon: <span className="text-sm">🔊</span> },
 ];
 
 const files = [
@@ -48,6 +25,8 @@ const files = [
 ];
 
 export function AnalysisFlow() {
+  const { active, activeModule, setActiveModule } = useTemplates();
+
   return (
     <aside className="flex w-[280px] shrink-0 flex-col gap-6 border-l border-border bg-surface px-5 py-6">
       <div>
@@ -57,46 +36,43 @@ export function AnalysisFlow() {
         </p>
 
         <ul className="mt-4 space-y-1">
-          {flow.map((item) => (
-            <li key={item.label}>
-              <button
-                className={cn(
-                  "group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-all duration-200",
-                  item.status === "active"
-                    ? "bg-card shadow-[var(--shadow-soft)] ring-1 ring-primary/15"
-                    : "hover:bg-card/70",
-                )}
-              >
-                <span
-                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md"
-                  style={{
-                    background: `color-mix(in oklab, ${item.color} 14%, transparent)`,
-                  }}
+          {flow.map((item) => {
+            const cards = active.modules[item.key].cards;
+            const enabled = cards.filter((c) => c.enabled).length;
+            const isActive = activeModule === item.key;
+            return (
+              <li key={item.key}>
+                <button
+                  onClick={() => setActiveModule(item.key)}
+                  className={cn(
+                    "group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-all duration-200",
+                    isActive
+                      ? "bg-card shadow-[var(--shadow-soft)] ring-1 ring-primary/15"
+                      : "hover:bg-card/70",
+                  )}
                 >
-                  {item.icon}
-                </span>
-                <span className="flex-1 text-[13px] font-medium text-foreground">
-                  {item.label}
-                </span>
-                <span className="text-[12px] tabular-nums text-muted-foreground">
-                  {item.progress}
-                </span>
-                {item.status !== "todo" ? (
-                  <Check
-                    className={cn(
-                      "h-3.5 w-3.5",
-                      item.status === "active" ? "text-primary" : "text-emerald-500",
-                    )}
-                    strokeWidth={3}
-                  />
-                ) : (
-                  <span className="text-[11px] font-medium text-primary opacity-80 group-hover:opacity-100">
-                    选择
+                  <span
+                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md"
+                    style={{ background: `color-mix(in oklab, ${item.color} 14%, transparent)` }}
+                  >
+                    {item.icon}
                   </span>
-                )}
-              </button>
-            </li>
-          ))}
+                  <span className="flex-1 text-[13px] font-medium text-foreground">{item.label}</span>
+                  <span className="text-[12px] tabular-nums text-muted-foreground">
+                    {enabled}/{cards.length}
+                  </span>
+                  {cards.length > 0 ? (
+                    <Check
+                      className={cn("h-3.5 w-3.5", isActive ? "text-primary" : "text-emerald-500")}
+                      strokeWidth={3}
+                    />
+                  ) : (
+                    <span className="text-[11px] font-medium text-primary opacity-80">空</span>
+                  )}
+                </button>
+              </li>
+            );
+          })}
         </ul>
       </div>
 

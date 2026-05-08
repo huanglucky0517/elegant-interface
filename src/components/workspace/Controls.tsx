@@ -34,7 +34,7 @@ export function AdvancedToggle({
       onClick={() => setOn((v) => !v)}
       aria-pressed={on}
       className={cn(
-        "inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-[12px] font-medium transition-all duration-200",
+        "inline-flex h-9 items-center gap-2 rounded-full border px-4 text-[13px] font-medium transition-all duration-200",
         on
           ? "border-primary/30 bg-primary-soft text-primary shadow-[inset_0_0_0_1px_oklch(0.62_0.22_295/0.08)]"
           : "border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-primary",

@@ -20,29 +20,28 @@ export function TemplateBar() {
   };
 
   return (
-    <div className="relative inline-flex items-center gap-2">
-      <span className="text-[12px] text-muted-foreground">分析流程模板</span>
+    <div className="relative w-full">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="inline-flex h-9 min-w-[220px] items-center justify-between gap-2 rounded-full border border-border bg-card px-4 text-[13px] font-medium text-foreground transition-colors hover:border-primary/40"
+        className="inline-flex h-9 w-full items-center justify-between gap-2 rounded-lg border border-border bg-card px-3 text-[12.5px] font-medium text-foreground transition-colors hover:border-primary/40"
       >
-        <span className="inline-flex items-center gap-2 truncate">
-          <FileText className="h-3.5 w-3.5 text-primary" />
+        <span className="inline-flex min-w-0 items-center gap-2 truncate">
+          <FileText className="h-3.5 w-3.5 shrink-0 text-primary" />
           <span className="truncate">{active.name}</span>
           {active.isSystem && (
-            <span className="rounded-full bg-primary-soft px-1.5 py-0.5 text-[10px] text-primary">
+            <span className="shrink-0 rounded-full bg-primary-soft px-1.5 py-0.5 text-[10px] text-primary">
               系统
             </span>
           )}
         </span>
-        <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", open && "rotate-180")} />
+        <ChevronDown className={cn("h-3.5 w-3.5 shrink-0", open && "rotate-180")} />
       </button>
 
       {open && (
         <>
           <div className="fixed inset-0 z-30" onClick={() => setOpen(false)} />
-          <div className="absolute left-[88px] top-11 z-40 w-[340px] rounded-xl border border-border bg-popover p-2 shadow-[var(--shadow-elegant)]">
+          <div className="absolute right-0 top-11 z-40 w-[320px] rounded-xl border border-border bg-popover p-2 shadow-[var(--shadow-elegant)]">
             <div className="px-2 py-1.5 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
               模板库
             </div>

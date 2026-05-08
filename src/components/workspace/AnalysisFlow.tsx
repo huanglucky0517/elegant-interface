@@ -1,6 +1,7 @@
 import { Check, Circle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTemplates } from "./templates/store";
+import { TemplateBar } from "./TemplateBar";
 import type { ModuleKey } from "./templates/types";
 
 interface FlowItem {
@@ -32,8 +33,12 @@ export function AnalysisFlow() {
       <div>
         <h3 className="text-[15px] font-semibold tracking-tight text-foreground">分析流程</h3>
         <p className="mt-1 text-[12px] text-muted-foreground">
-          选择初始方案设计需要分析的流程
+          选择模板并配置需要分析的流程
         </p>
+
+        <div className="mt-3">
+          <TemplateBar />
+        </div>
 
         <ul className="mt-4 space-y-1">
           {flow.map((item) => {

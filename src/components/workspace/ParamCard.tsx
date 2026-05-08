@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { ChevronDown, Check } from "lucide-react";
+import { ChevronDown, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Card as CardModel, Param } from "./templates/types";
 import { useTemplates } from "./templates/store";
@@ -17,35 +17,33 @@ export function ParamCard({ card }: ParamCardProps) {
   return (
     <div
       className={cn(
-        "group rounded-xl border bg-card p-4 transition-[box-shadow,border-color,background] duration-200",
-        card.enabled
-          ? "border-border shadow-[var(--shadow-card)] hover:border-primary/30 hover:shadow-[var(--shadow-elegant)]"
-          : "border-dashed border-border/70 bg-muted/30 opacity-70",
+        "group mb-4 break-inside-avoid rounded-xl border border-border bg-card p-4 transition-[box-shadow,border-color] duration-200",
+        "shadow-[var(--shadow-card)] hover:border-primary/30 hover:shadow-[var(--shadow-elegant)]",
       )}
     >
       <div className="flex items-center gap-2">
-        <button
-          type="button"
-          onClick={() => toggleCardEnabled(card.id)}
-          aria-pressed={card.enabled}
-          className={cn(
-            "flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-[5px] border transition-colors",
-            card.enabled
-              ? "border-primary bg-primary text-primary-foreground"
-              : "border-border bg-background hover:border-primary/60",
-          )}
-        >
-          {card.enabled && <Check className="h-3 w-3" strokeWidth={3} />}
-        </button>
+        <span className="inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-primary/70" />
         <span className="text-[15px] font-medium tracking-tight text-foreground">{card.title}</span>
         {hasAdvanced && (
           <span className="ml-auto inline-flex items-center gap-1 rounded-full bg-primary-soft px-2 py-0.5 text-[10px] font-medium text-primary">
             高级 {advParams.length}
           </span>
         )}
+        <button
+          type="button"
+          onClick={() => toggleCardEnabled(card.id)}
+          title="释放回卡片库"
+          className={cn(
+            "flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-muted-foreground/70 transition-all",
+            "opacity-0 group-hover:opacity-100 hover:bg-destructive/10 hover:text-destructive",
+            !hasAdvanced && "ml-auto",
+          )}
+        >
+          <X className="h-3.5 w-3.5" strokeWidth={2.5} />
+        </button>
       </div>
 
-      {card.enabled && (basicParams.length > 0 || hasAdvanced) && (
+      {(basicParams.length > 0 || hasAdvanced) && (
         <div className="mt-3 space-y-1">
           {basicParams.map((p) => (
             <ParamRow key={p.key} param={p} onChange={(v) => updateParam(card.id, p.key, v)} />

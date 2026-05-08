@@ -1,6 +1,7 @@
 import { Check, Circle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTemplates } from "./templates/store";
+import { TemplateBar } from "./TemplateBar";
 import type { ModuleKey } from "./templates/types";
 
 interface FlowItem {

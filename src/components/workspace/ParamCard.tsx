@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { ChevronDown, X } from "lucide-react";
+import { ChevronDown, Check, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Card as CardModel, Param } from "./templates/types";
 import { useTemplates } from "./templates/store";

@@ -69,7 +69,7 @@ function Workspace() {
   return (
     <main className="flex flex-1 flex-col overflow-hidden">
       {/* Toolbar: title + tabs on the left, advanced + close on the right */}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-surface/60 px-6 py-4">
+      <div className="flex flex-wrap items-center justify-between gap-3 px-6 py-4">
         <div className="flex flex-wrap items-center gap-4">
           <div className="flex items-baseline gap-2">
             <h1 className="text-[20px] font-semibold tracking-tight text-foreground">

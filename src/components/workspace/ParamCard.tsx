@@ -17,8 +17,8 @@ export function ParamCard({ card }: ParamCardProps) {
   return (
     <div
       className={cn(
-        "group mb-4 break-inside-avoid rounded-xl border border-border bg-card p-4 transition-[box-shadow,border-color] duration-200",
-        "shadow-[var(--shadow-card)] hover:border-primary/30 hover:shadow-[var(--shadow-elegant)]",
+        "group mb-4 break-inside-avoid rounded-2xl bg-card p-4 transition-[box-shadow,transform] duration-200",
+        "shadow-[0_1px_2px_rgba(0,0,0,0.04),0_4px_16px_-8px_rgba(0,0,0,0.06)] hover:-translate-y-0.5 hover:shadow-[0_8px_24px_-10px_oklch(0.62_0.22_295/0.25)]",
       )}
     >
       <div className="flex items-center gap-2">

@@ -92,9 +92,9 @@ function Workspace() {
         </div>
       </div>
 
-      {/* Body: workspace canvas + card library sidebar (subset of this module page) */}
-      <div className="flex flex-1 overflow-hidden">
-        <div className="flex-1 overflow-auto px-6 py-6">
+      {/* Body: workspace canvas + floating card library panel */}
+      <div className="relative flex flex-1 overflow-hidden">
+        <div className="flex-1 overflow-auto px-6 py-4 pr-[316px]">
           <div
             onDragOver={onDragOver}
             onDragLeave={onDragLeave}

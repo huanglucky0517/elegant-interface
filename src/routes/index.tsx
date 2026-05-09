@@ -35,7 +35,6 @@ function WorkspacePage() {
         <div className="flex flex-1">
           <LeftNav />
           <Workspace />
-          <CardLibrary />
           <AnalysisFlow />
         </div>
       </div>
@@ -68,51 +67,55 @@ function Workspace() {
   };
 
   return (
-    <main className="flex-1 overflow-x-auto">
-      <div className="mx-auto max-w-[1280px] px-6 pt-5 pb-12">
-        {/* Toolbar */}
-        <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+    <main className="flex flex-1 flex-col overflow-hidden">
+      {/* Toolbar: title + tabs on the left, advanced + close on the right */}
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-surface/60 px-6 py-4">
+        <div className="flex flex-wrap items-center gap-4">
+          <div className="flex items-baseline gap-2">
+            <h1 className="text-[20px] font-semibold tracking-tight text-foreground">
+              {moduleTitle[activeModule]}
+            </h1>
+            <span className="text-[12px] text-muted-foreground">
+              已选择 {inWorkspace.length} 项
+            </span>
+          </div>
           <div className="inline-flex items-center gap-1 rounded-full bg-muted/70 p-1">
             <TabPill active icon={<LayoutGrid className="h-3.5 w-3.5" />}>
               选项卡
             </TabPill>
             <TabPill icon={<Table2 className="h-3.5 w-3.5" />}>表格数据</TabPill>
           </div>
-          <div className="flex items-center gap-3">
-            <AdvancedToggle />
-            <CloseButton />
+        </div>
+        <div className="flex items-center gap-3">
+          <AdvancedToggle />
+          <CloseButton />
+        </div>
+      </div>
+
+      {/* Body: workspace canvas + card library sidebar (subset of this module page) */}
+      <div className="flex flex-1 overflow-hidden">
+        <div className="flex-1 overflow-auto px-6 py-6">
+          <div
+            onDragOver={onDragOver}
+            onDragLeave={onDragLeave}
+            onDrop={onDrop}
+            className={cn(
+              "min-h-[400px] rounded-xl transition-colors",
+              dragOver && "bg-primary-soft/40 ring-2 ring-primary/40 ring-offset-4 ring-offset-background",
+            )}
+          >
+            {inWorkspace.length === 0 ? (
+              <EmptyDropZone />
+            ) : (
+              <div className="columns-1 gap-4 sm:columns-2 lg:columns-3 xl:columns-4">
+                {inWorkspace.map((card) => (
+                  <ParamCard key={card.id} card={card} />
+                ))}
+              </div>
+            )}
           </div>
         </div>
-
-        {/* Header */}
-        <div className="mb-4 flex items-baseline gap-3">
-          <h1 className="text-[20px] font-semibold tracking-tight text-foreground">
-            {moduleTitle[activeModule]}
-          </h1>
-          <span className="text-[12px] text-muted-foreground">
-            已选择 {inWorkspace.length} 项
-          </span>
-        </div>
-
-        <div
-          onDragOver={onDragOver}
-          onDragLeave={onDragLeave}
-          onDrop={onDrop}
-          className={cn(
-            "min-h-[400px] rounded-xl transition-colors",
-            dragOver && "bg-primary-soft/40 ring-2 ring-primary/40 ring-offset-4 ring-offset-background",
-          )}
-        >
-          {inWorkspace.length === 0 ? (
-            <EmptyDropZone />
-          ) : (
-            <div className="columns-1 gap-4 sm:columns-2 lg:columns-3 xl:columns-4">
-              {inWorkspace.map((card) => (
-                <ParamCard key={card.id} card={card} />
-              ))}
-            </div>
-          )}
-        </div>
+        <CardLibrary />
       </div>
     </main>
   );
@@ -126,7 +129,7 @@ function EmptyDropZone() {
       </div>
       <p className="mt-3 text-[14px] font-medium text-foreground">分栏页暂无卡片</p>
       <p className="mt-1 text-[12px] text-muted-foreground">
-        从右侧"分析流程"卡片库勾选或拖拽卡片到此处
+        从右侧"计算任务卡"勾选或拖拽卡片到此处
       </p>
     </div>
   );

@@ -42,7 +42,7 @@ export function CardLibrary() {
           type="button"
           onClick={() => setCollapsed(false)}
           className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-card hover:text-primary"
-          title="展开分析流程"
+          title="展开计算任务卡"
         >
           <ChevronLeft className="h-4 w-4" />
         </button>
@@ -50,7 +50,7 @@ export function CardLibrary() {
           <Workflow className="h-4 w-4" />
         </div>
         <div className="rotate-180 [writing-mode:vertical-rl] text-[12px] font-medium tracking-widest text-muted-foreground">
-          分析流程 · {selectedCount}/{cards.length}
+          计算任务卡 · {selectedCount}/{cards.length}
         </div>
       </aside>
     );

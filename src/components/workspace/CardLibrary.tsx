@@ -1,5 +1,5 @@
 import { useMemo, useState, type DragEvent } from "react";
-import { ChevronLeft, ChevronRight, GripVertical, Plus, Check, Search, Workflow } from "lucide-react";
+import { ChevronRight, GripVertical, Plus, Check, Search, Workflow, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTemplates } from "./templates/store";
 import type { ModuleKey } from "./templates/types";
@@ -11,9 +11,15 @@ const moduleTitle: Record<ModuleKey, string> = {
   nvh: "振动噪音",
 };
 
+/**
+ * Floating card library panel — Bilibili-inspired:
+ * - Clean white floating card, rounded-2xl, soft shadow, no hard borders
+ * - Collapsed state: small pill button hugging the right edge
+ * - Accent pink/primary highlights, light hover surfaces, almost no dividers
+ */
 export function CardLibrary() {
   const { active, activeModule, toggleCardEnabled } = useTemplates();
-  const [collapsed, setCollapsed] = useState(false);
+  const [open, setOpen] = useState(true);
   const [query, setQuery] = useState("");
 
   const cards = active.modules[activeModule].cards;
@@ -35,70 +41,92 @@ export function CardLibrary() {
     e.dataTransfer.effectAllowed = "move";
   };
 
-  if (collapsed) {
+  if (!open) {
     return (
-      <aside className="flex w-11 shrink-0 flex-col items-center gap-3 border-l border-border bg-surface py-4">
-        <button
-          type="button"
-          onClick={() => setCollapsed(false)}
-          className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-card hover:text-primary"
-          title="展开计算任务卡"
-        >
-          <ChevronLeft className="h-4 w-4" />
-        </button>
-        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary-soft text-primary">
-          <Workflow className="h-4 w-4" />
-        </div>
-        <div className="rotate-180 [writing-mode:vertical-rl] text-[12px] font-medium tracking-widest text-muted-foreground">
-          计算任务卡 · {selectedCount}/{cards.length}
-        </div>
-      </aside>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className={cn(
+          "absolute right-4 top-6 z-30 inline-flex items-center gap-2 rounded-full bg-card/95 px-3 py-2 text-[12px] font-medium text-foreground backdrop-blur-md",
+          "shadow-[0_8px_24px_-10px_oklch(0.62_0.22_295/0.35)] ring-1 ring-primary/10 transition-all hover:scale-[1.03] hover:text-primary",
+        )}
+        title="展开计算任务卡"
+      >
+        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary-soft text-primary">
+          <Workflow className="h-3.5 w-3.5" />
+        </span>
+        计算任务卡
+        <span className="rounded-full bg-primary-soft px-1.5 py-0.5 text-[10.5px] font-semibold tabular-nums text-primary">
+          {selectedCount}/{cards.length}
+        </span>
+      </button>
     );
   }
 
   return (
-    <aside className="flex w-[260px] shrink-0 flex-col border-l border-border bg-surface">
-      <div className="flex items-center justify-between gap-2 border-b border-border px-4 py-3">
-        <div className="inline-flex items-center gap-2">
-          <span className="flex h-7 w-7 items-center justify-center rounded-md bg-primary-soft text-primary">
-            <Workflow className="h-3.5 w-3.5" />
+    <aside
+      className={cn(
+        "absolute right-4 top-4 z-30 flex h-[calc(100%-2rem)] w-[280px] flex-col overflow-hidden rounded-2xl bg-card/95 backdrop-blur-md",
+        "shadow-[0_20px_60px_-25px_oklch(0.62_0.22_295/0.35),0_4px_12px_-6px_rgba(0,0,0,0.08)] ring-1 ring-black/[0.04]",
+      )}
+    >
+      {/* Header */}
+      <div className="flex items-center justify-between gap-2 px-4 pt-4 pb-3">
+        <div className="inline-flex items-center gap-2.5">
+          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[image:var(--gradient-primary)] text-primary-foreground shadow-sm">
+            <Workflow className="h-4 w-4" />
           </span>
           <div className="leading-tight">
-            <div className="text-[13px] font-semibold tracking-tight text-foreground">计算任务卡</div>
-            <div className="text-[10.5px] text-muted-foreground">
-              {moduleTitle[activeModule]} · 已选 {selectedCount}/{cards.length}
+            <div className="text-[14px] font-semibold tracking-tight text-foreground">
+              计算任务卡
+            </div>
+            <div className="text-[11px] text-muted-foreground">
+              {moduleTitle[activeModule]} · 已选{" "}
+              <span className="font-medium text-primary">{selectedCount}</span>
+              <span className="opacity-60">/{cards.length}</span>
             </div>
           </div>
         </div>
         <button
           type="button"
-          onClick={() => setCollapsed(true)}
-          className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-card hover:text-primary"
-          title="折叠"
+          onClick={() => setOpen(false)}
+          className="flex h-7 w-7 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          title="收起"
         >
           <ChevronRight className="h-4 w-4" />
         </button>
       </div>
 
-      <div className="px-3 pt-3">
+      {/* Search */}
+      <div className="px-4 pb-2">
         <div className="relative">
-          <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="搜索卡片"
-            className="h-8 w-full rounded-md border border-input bg-background pl-7 pr-2 text-[12.5px] focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+            className="h-8 w-full rounded-full bg-muted/60 pl-8 pr-3 text-[12.5px] text-foreground placeholder:text-muted-foreground/70 focus:bg-background focus:outline-none focus:ring-2 focus:ring-primary/25"
           />
+          {query && (
+            <button
+              type="button"
+              onClick={() => setQuery("")}
+              className="absolute right-2 top-1/2 flex h-5 w-5 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground"
+            >
+              <X className="h-3 w-3" />
+            </button>
+          )}
         </div>
       </div>
 
-      <div className="mt-2 flex-1 overflow-auto px-2 pb-3">
+      {/* List */}
+      <div className="flex-1 overflow-auto px-2 pb-2">
         {filtered.length === 0 ? (
-          <div className="mt-6 px-3 text-center text-[12px] text-muted-foreground">
+          <div className="mt-8 px-3 text-center text-[12px] text-muted-foreground">
             没有匹配的卡片
           </div>
         ) : (
-          <ul className="space-y-1">
+          <ul className="space-y-0.5">
             {filtered.map((card) => {
               const selected = card.enabled;
               return (
@@ -107,18 +135,18 @@ export function CardLibrary() {
                   draggable={!selected}
                   onDragStart={(e) => onDragStart(e, card.id, selected)}
                   className={cn(
-                    "group flex items-center gap-2 rounded-lg border px-2 py-2 transition-all",
+                    "group flex items-center gap-2 rounded-xl px-2.5 py-2 transition-all",
                     selected
-                      ? "cursor-not-allowed border-primary/30 bg-primary-soft/50"
-                      : "cursor-grab border-transparent bg-card/60 hover:border-primary/30 hover:bg-card hover:shadow-[var(--shadow-soft)] active:cursor-grabbing",
+                      ? "cursor-not-allowed bg-primary-soft/60"
+                      : "cursor-grab hover:bg-muted/70 active:cursor-grabbing",
                   )}
                 >
                   <GripVertical
                     className={cn(
-                      "h-3.5 w-3.5 shrink-0",
+                      "h-3.5 w-3.5 shrink-0 transition-opacity",
                       selected
                         ? "text-primary/30"
-                        : "text-muted-foreground/60 group-hover:text-primary",
+                        : "text-muted-foreground/40 opacity-0 group-hover:opacity-100",
                     )}
                   />
                   <div className="min-w-0 flex-1">
@@ -140,10 +168,10 @@ export function CardLibrary() {
                     onClick={() => toggleCardEnabled(card.id)}
                     title={selected ? "已选择，点击移除" : "加入分栏页"}
                     className={cn(
-                      "flex h-6 w-6 shrink-0 items-center justify-center rounded-md transition-colors",
+                      "flex h-6 w-6 shrink-0 items-center justify-center rounded-full transition-all",
                       selected
-                        ? "bg-primary text-primary-foreground hover:bg-primary/90"
-                        : "text-primary hover:bg-primary-soft",
+                        ? "bg-primary text-primary-foreground hover:bg-primary/85"
+                        : "text-primary opacity-0 hover:bg-primary-soft group-hover:opacity-100",
                     )}
                   >
                     {selected ? (
@@ -159,8 +187,9 @@ export function CardLibrary() {
         )}
       </div>
 
-      <div className="border-t border-border px-4 py-2.5 text-[10.5px] leading-relaxed text-muted-foreground">
-        提示：拖拽未选中的卡片到分栏页，或点击 <Plus className="-mt-0.5 inline h-3 w-3" /> 快速加入；点击 <Check className="-mt-0.5 inline h-3 w-3" /> 移除已选卡片
+      {/* Footer */}
+      <div className="px-4 pb-3 pt-1 text-[10.5px] leading-relaxed text-muted-foreground/80">
+        拖拽卡片到分栏页，或点击 <Plus className="-mt-0.5 inline h-3 w-3 text-primary" /> 快速加入
       </div>
     </aside>
   );

@@ -182,21 +182,25 @@ export const SYSTEM_TEMPLATE: Template = {
   },
 };
 
+// Light template: same full card library, but fewer cards pre-selected into workspace.
+const lightenEm = emCards.map((card, i) => ({
+  ...card,
+  enabled: i < 5, // only first 5 cards pre-selected
+  advancedOpen: false,
+}));
+const lightenThermal = thermalCards.map((card, i) => ({ ...card, enabled: i < 1, advancedOpen: false }));
+const lightenStress = stressCards.map((card) => ({ ...card, enabled: false, advancedOpen: false }));
+const lightenNvh = nvhCards.map((card) => ({ ...card, enabled: false, advancedOpen: false }));
+
 export const SYSTEM_LIGHT: Template = {
   id: "system-light",
-  name: "系统模板 · 仅电磁快速评估",
+  name: "系统模板 · 快速评估",
   isSystem: true,
   modules: {
-    em: mod(
-      emCards.slice(0, 7).map((card) => ({
-        ...card,
-        advancedOpen: false,
-        params: card.params.filter((p) => !p.advanced),
-      })),
-    ),
-    thermal: mod([]),
-    stress: mod([]),
-    nvh: mod([]),
+    em: mod(lightenEm),
+    thermal: mod(lightenThermal),
+    stress: mod(lightenStress),
+    nvh: mod(lightenNvh),
   },
 };
 

@@ -34,8 +34,8 @@ function WorkspacePage() {
         <TopBar />
         <div className="flex flex-1">
           <LeftNav />
-          <CardLibrary />
           <Workspace />
+          <CardLibrary />
           <AnalysisFlow />
         </div>
       </div>
@@ -90,7 +90,7 @@ function Workspace() {
             {moduleTitle[activeModule]}
           </h1>
           <span className="text-[12px] text-muted-foreground">
-            分栏页 {inWorkspace.length} 项 · 卡片库 {cards.length - inWorkspace.length} 项
+            已选择 {inWorkspace.length} 项
           </span>
         </div>
 

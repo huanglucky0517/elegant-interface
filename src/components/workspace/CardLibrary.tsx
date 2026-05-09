@@ -64,7 +64,7 @@ export function CardLibrary() {
             <Workflow className="h-3.5 w-3.5" />
           </span>
           <div className="leading-tight">
-            <div className="text-[13px] font-semibold tracking-tight text-foreground">分析流程</div>
+            <div className="text-[13px] font-semibold tracking-tight text-foreground">计算任务卡</div>
             <div className="text-[10.5px] text-muted-foreground">
               {moduleTitle[activeModule]} · 已选 {selectedCount}/{cards.length}
             </div>

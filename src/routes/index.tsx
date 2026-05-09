@@ -126,7 +126,7 @@ function EmptyDropZone() {
       </div>
       <p className="mt-3 text-[14px] font-medium text-foreground">分栏页暂无卡片</p>
       <p className="mt-1 text-[12px] text-muted-foreground">
-        从左侧卡片库勾选或拖拽卡片到此处
+        从右侧"分析流程"卡片库勾选或拖拽卡片到此处
       </p>
     </div>
   );

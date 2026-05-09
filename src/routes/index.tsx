@@ -69,7 +69,7 @@ function Workspace() {
   return (
     <main className="flex flex-1 flex-col overflow-hidden">
       {/* Toolbar: title + tabs on the left, advanced + close on the right */}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-surface/60 px-6 py-4">
+      <div className="flex flex-wrap items-center justify-between gap-3 px-6 py-4">
         <div className="flex flex-wrap items-center gap-4">
           <div className="flex items-baseline gap-2">
             <h1 className="text-[20px] font-semibold tracking-tight text-foreground">
@@ -92,9 +92,9 @@ function Workspace() {
         </div>
       </div>
 
-      {/* Body: workspace canvas + card library sidebar (subset of this module page) */}
-      <div className="flex flex-1 overflow-hidden">
-        <div className="flex-1 overflow-auto px-6 py-6">
+      {/* Body: workspace canvas + floating card library panel */}
+      <div className="relative flex flex-1 overflow-hidden">
+        <div className="flex-1 overflow-auto px-6 py-4 pr-[316px]">
           <div
             onDragOver={onDragOver}
             onDragLeave={onDragLeave}

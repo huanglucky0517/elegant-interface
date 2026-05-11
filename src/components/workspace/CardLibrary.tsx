@@ -67,7 +67,7 @@ export function CardLibrary({ open, onClose }: { open: boolean; onClose: () => v
         </div>
         <button
           type="button"
-          onClick={() => setOpen(false)}
+          onClick={onClose}
           className="flex h-7 w-7 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           title="收起"
         >

@@ -1,6 +1,6 @@
 import { useState, type DragEvent } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { LayoutGrid, Table2, Plus } from "lucide-react";
+import { LayoutGrid, Table2, Plus, Workflow } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { LeftNav, TopBar } from "@/components/workspace/Chrome";
 import { AnalysisFlow } from "@/components/workspace/AnalysisFlow";
@@ -47,6 +47,7 @@ function Workspace() {
   const cards = active.modules[activeModule].cards;
   const inWorkspace = cards.filter((c) => c.enabled);
   const [dragOver, setDragOver] = useState(false);
+  const [libraryOpen, setLibraryOpen] = useState(true);
 
   const onDragOver = (e: DragEvent) => {
     if (e.dataTransfer.types.includes("text/x-card-id")) {
@@ -71,14 +72,9 @@ function Workspace() {
       {/* Toolbar: title + tabs on the left, advanced + close on the right */}
       <div className="flex flex-wrap items-center justify-between gap-3 px-6 py-4">
         <div className="flex flex-wrap items-center gap-4">
-          <div className="flex items-baseline gap-2">
-            <h1 className="text-[20px] font-semibold tracking-tight text-foreground">
-              {moduleTitle[activeModule]}
-            </h1>
-            <span className="text-[12px] text-muted-foreground">
-              已选择 {inWorkspace.length} 项
-            </span>
-          </div>
+          <h1 className="text-[20px] font-semibold tracking-tight text-foreground">
+            {moduleTitle[activeModule]}
+          </h1>
           <div className="inline-flex items-center gap-1 rounded-full bg-muted/70 p-1">
             <TabPill active icon={<LayoutGrid className="h-3.5 w-3.5" />}>
               选项卡
@@ -87,13 +83,14 @@ function Workspace() {
           </div>
         </div>
         <div className="flex items-center gap-3">
+          <LibraryToggle open={libraryOpen} onToggle={() => setLibraryOpen((v) => !v)} count={inWorkspace.length} />
           <AdvancedToggle />
           <CloseButton />
         </div>
       </div>
 
-      {/* Body: workspace canvas + floating card library panel (overlays on top) */}
-      <div className="relative flex flex-1 overflow-hidden">
+      {/* Body: workspace canvas + side card library panel (pushes content) */}
+      <div className="flex flex-1 overflow-hidden">
         <div className="flex-1 overflow-auto px-6 py-4">
           <div
             onDragOver={onDragOver}
@@ -115,9 +112,42 @@ function Workspace() {
             )}
           </div>
         </div>
-        <CardLibrary />
+        <CardLibrary open={libraryOpen} onClose={() => setLibraryOpen(false)} />
       </div>
     </main>
+  );
+}
+
+function LibraryToggle({ open, onToggle, count }: { open: boolean; onToggle: () => void; count: number }) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-pressed={open}
+      title={open ? "隐藏计算任务卡库" : "显示计算任务卡库"}
+      className={cn(
+        "inline-flex h-9 items-center gap-2 rounded-full border px-4 text-[13px] font-medium transition-all duration-200",
+        open
+          ? "border-primary/30 bg-primary-soft text-primary shadow-[inset_0_0_0_1px_oklch(0.62_0.22_295/0.08)]"
+          : "border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-primary",
+      )}
+    >
+      <span
+        className={cn(
+          "relative inline-flex h-3.5 w-7 items-center rounded-full transition-colors",
+          open ? "bg-primary" : "bg-border",
+        )}
+      >
+        <span
+          className={cn(
+            "absolute h-2.5 w-2.5 rounded-full bg-white shadow-sm transition-transform duration-200",
+            open ? "translate-x-3.5" : "translate-x-0.5",
+          )}
+        />
+      </span>
+      <Workflow className="h-3.5 w-3.5" />
+      <span>计算任务卡{count > 0 && <span className="ml-1 tabular-nums opacity-80">· {count}</span>}</span>
+    </button>
   );
 }
 

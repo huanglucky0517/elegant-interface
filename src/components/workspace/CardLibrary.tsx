@@ -17,10 +17,10 @@ const moduleTitle: Record<ModuleKey, string> = {
  * - Collapsed state: small pill button hugging the right edge
  * - Accent pink/primary highlights, light hover surfaces, almost no dividers
  */
-export function CardLibrary() {
+export function CardLibrary({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { active, activeModule, toggleCardEnabled } = useTemplates();
-  const [open, setOpen] = useState(true);
   const [query, setQuery] = useState("");
+  if (!open) return null;
 
   const cards = active.modules[activeModule].cards;
   const filtered = useMemo(
@@ -41,30 +41,10 @@ export function CardLibrary() {
     e.dataTransfer.effectAllowed = "move";
   };
 
-  if (!open) {
-    return (
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className={cn(
-          "absolute right-3 top-1/2 z-30 flex h-24 w-7 -translate-y-1/2 flex-col items-center justify-center gap-2 rounded-l-xl rounded-r-md bg-card/95 py-3 text-[11px] font-medium text-foreground backdrop-blur-md",
-          "shadow-[0_8px_24px_-10px_oklch(0.62_0.22_295/0.35)] ring-1 ring-primary/10 transition-all hover:w-8 hover:text-primary",
-        )}
-        title="展开计算任务卡"
-      >
-        <Workflow className="h-3.5 w-3.5 text-primary" />
-        <span className="[writing-mode:vertical-rl] tracking-widest">任务卡</span>
-        <span className="rounded-full bg-primary-soft px-1 text-[10px] font-semibold tabular-nums text-primary">
-          {selectedCount}
-        </span>
-      </button>
-    );
-  }
-
   return (
     <aside
       className={cn(
-        "absolute right-4 top-4 z-30 flex h-[calc(100%-2rem)] w-[280px] flex-col overflow-hidden rounded-2xl bg-card/95 backdrop-blur-md",
+        "relative my-4 mr-4 flex w-[300px] shrink-0 flex-col overflow-hidden rounded-2xl bg-card/95 backdrop-blur-md",
         "shadow-[0_20px_60px_-25px_oklch(0.62_0.22_295/0.35),0_4px_12px_-6px_rgba(0,0,0,0.08)] ring-1 ring-black/[0.04]",
       )}
     >
@@ -87,7 +67,7 @@ export function CardLibrary() {
         </div>
         <button
           type="button"
-          onClick={() => setOpen(false)}
+          onClick={onClose}
           className="flex h-7 w-7 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           title="收起"
         >

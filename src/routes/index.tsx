@@ -47,6 +47,7 @@ function Workspace() {
   const cards = active.modules[activeModule].cards;
   const inWorkspace = cards.filter((c) => c.enabled);
   const [dragOver, setDragOver] = useState(false);
+  const [libraryOpen, setLibraryOpen] = useState(true);
 
   const onDragOver = (e: DragEvent) => {
     if (e.dataTransfer.types.includes("text/x-card-id")) {

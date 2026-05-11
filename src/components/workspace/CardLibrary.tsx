@@ -47,17 +47,15 @@ export function CardLibrary() {
         type="button"
         onClick={() => setOpen(true)}
         className={cn(
-          "absolute right-4 top-6 z-30 inline-flex items-center gap-2 rounded-full bg-card/95 px-3 py-2 text-[12px] font-medium text-foreground backdrop-blur-md",
-          "shadow-[0_8px_24px_-10px_oklch(0.62_0.22_295/0.35)] ring-1 ring-primary/10 transition-all hover:scale-[1.03] hover:text-primary",
+          "absolute right-3 top-1/2 z-30 flex h-24 w-7 -translate-y-1/2 flex-col items-center justify-center gap-2 rounded-l-xl rounded-r-md bg-card/95 py-3 text-[11px] font-medium text-foreground backdrop-blur-md",
+          "shadow-[0_8px_24px_-10px_oklch(0.62_0.22_295/0.35)] ring-1 ring-primary/10 transition-all hover:w-8 hover:text-primary",
         )}
         title="展开计算任务卡"
       >
-        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary-soft text-primary">
-          <Workflow className="h-3.5 w-3.5" />
-        </span>
-        计算任务卡
-        <span className="rounded-full bg-primary-soft px-1.5 py-0.5 text-[10.5px] font-semibold tabular-nums text-primary">
-          {selectedCount}/{cards.length}
+        <Workflow className="h-3.5 w-3.5 text-primary" />
+        <span className="[writing-mode:vertical-rl] tracking-widest">任务卡</span>
+        <span className="rounded-full bg-primary-soft px-1 text-[10px] font-semibold tabular-nums text-primary">
+          {selectedCount}
         </span>
       </button>
     );

@@ -92,9 +92,9 @@ function Workspace() {
         </div>
       </div>
 
-      {/* Body: workspace canvas + floating card library panel */}
+      {/* Body: workspace canvas + floating card library panel (overlays on top) */}
       <div className="relative flex flex-1 overflow-hidden">
-        <div className="flex-1 overflow-auto px-6 py-4 pr-[316px]">
+        <div className="flex-1 overflow-auto px-6 py-4">
           <div
             onDragOver={onDragOver}
             onDragLeave={onDragLeave}
@@ -107,7 +107,7 @@ function Workspace() {
             {inWorkspace.length === 0 ? (
               <EmptyDropZone />
             ) : (
-              <div className="columns-1 gap-4 sm:columns-2 lg:columns-3 xl:columns-4">
+              <div className="grid gap-4 [grid-template-columns:repeat(auto-fill,minmax(280px,1fr))]">
                 {inWorkspace.map((card) => (
                   <ParamCard key={card.id} card={card} />
                 ))}

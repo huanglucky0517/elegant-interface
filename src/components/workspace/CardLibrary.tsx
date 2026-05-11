@@ -17,10 +17,10 @@ const moduleTitle: Record<ModuleKey, string> = {
  * - Collapsed state: small pill button hugging the right edge
  * - Accent pink/primary highlights, light hover surfaces, almost no dividers
  */
-export function CardLibrary() {
+export function CardLibrary({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { active, activeModule, toggleCardEnabled } = useTemplates();
-  const [open, setOpen] = useState(true);
   const [query, setQuery] = useState("");
+  if (!open) return null;
 
   const cards = active.modules[activeModule].cards;
   const filtered = useMemo(

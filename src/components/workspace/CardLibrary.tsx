@@ -44,7 +44,7 @@ export function CardLibrary({ open, onClose }: { open: boolean; onClose: () => v
   return (
     <aside
       className={cn(
-        "absolute right-4 top-4 z-30 flex h-[calc(100%-2rem)] w-[280px] flex-col overflow-hidden rounded-2xl bg-card/95 backdrop-blur-md",
+        "relative my-4 mr-4 flex w-[300px] shrink-0 flex-col overflow-hidden rounded-2xl bg-card/95 backdrop-blur-md",
         "shadow-[0_20px_60px_-25px_oklch(0.62_0.22_295/0.35),0_4px_12px_-6px_rgba(0,0,0,0.08)] ring-1 ring-black/[0.04]",
       )}
     >

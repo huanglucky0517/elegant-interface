@@ -173,7 +173,7 @@
   /* Thin, borderless scrollbars */
   * {
     scrollbar-width: thin;
-    scrollbar-color: #000 transparent;
+    scrollbar-color: #5F5F5D transparent;
   }
   *::-webkit-scrollbar {
     width: 4px;
@@ -184,7 +184,7 @@
     border: 0;
   }
   *::-webkit-scrollbar-thumb {
-    background-color: #000;
+    background-color: #5F5F5D;
     border: 0;
     border-radius: 2px;
   }

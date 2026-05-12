@@ -1,6 +1,6 @@
 import { useState, type DragEvent } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { LayoutGrid, Table2, Plus, Workflow } from "lucide-react";
+import { LayoutGrid, Table2, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { LeftNav, TopBar } from "@/components/workspace/Chrome";
 import { AnalysisFlow } from "@/components/workspace/AnalysisFlow";
@@ -120,7 +120,7 @@ function Workspace() {
   );
 }
 
-function LibraryToggle({ open, onToggle, count }: { open: boolean; onToggle: () => void; count: number }) {
+function LibraryToggle({ open, onToggle }: { open: boolean; onToggle: () => void; count?: number }) {
   return (
     <button
       type="button"

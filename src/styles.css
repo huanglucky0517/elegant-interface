@@ -169,4 +169,26 @@
     -moz-appearance: textfield;
     appearance: textfield;
   }
+
+  /* Thin, borderless scrollbars */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #000 transparent;
+  }
+  *::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+  *::-webkit-scrollbar-track {
+    background: transparent;
+    border: 0;
+  }
+  *::-webkit-scrollbar-thumb {
+    background-color: #000;
+    border: 0;
+    border-radius: 2px;
+  }
+  *::-webkit-scrollbar-corner {
+    background: transparent;
+  }
 }

@@ -1,6 +1,6 @@
 import { useState, type DragEvent } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { LayoutGrid, Table2, Plus, Workflow } from "lucide-react";
+import { LayoutGrid, Table2, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { LeftNav, TopBar } from "@/components/workspace/Chrome";
 import { AnalysisFlow } from "@/components/workspace/AnalysisFlow";
@@ -30,9 +30,9 @@ export const Route = createFileRoute("/")({
 function WorkspacePage() {
   return (
     <TemplateProvider>
-      <div className="flex min-h-screen flex-col bg-background text-foreground">
+      <div className="flex h-screen flex-col overflow-hidden bg-background text-foreground">
         <TopBar />
-        <div className="flex flex-1">
+        <div className="flex flex-1 overflow-hidden">
           <LeftNav />
           <Workspace />
           <AnalysisFlow />
@@ -68,9 +68,9 @@ function Workspace() {
   };
 
   return (
-    <main className="flex flex-1 flex-col overflow-hidden">
+    <main className="flex h-full flex-1 flex-col overflow-hidden">
       {/* Toolbar: title + tabs on the left, advanced + close on the right */}
-      <div className="flex flex-wrap items-center justify-between gap-3 px-6 py-4">
+      <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 px-6 py-4">
         <div className="flex flex-wrap items-center gap-4">
           <h1 className="text-[20px] font-semibold tracking-tight text-foreground">
             {moduleTitle[activeModule]}
@@ -104,9 +104,11 @@ function Workspace() {
             {inWorkspace.length === 0 ? (
               <EmptyDropZone />
             ) : (
-              <div className="grid gap-4 [grid-template-columns:repeat(auto-fill,minmax(280px,1fr))]">
+              <div className="gap-4 [column-fill:_balance] [column-gap:1rem] [column-width:280px]">
                 {inWorkspace.map((card) => (
-                  <ParamCard key={card.id} card={card} />
+                  <div key={card.id} className="mb-4 break-inside-avoid">
+                    <ParamCard card={card} />
+                  </div>
                 ))}
               </div>
             )}
@@ -118,7 +120,7 @@ function Workspace() {
   );
 }
 
-function LibraryToggle({ open, onToggle, count }: { open: boolean; onToggle: () => void; count: number }) {
+function LibraryToggle({ open, onToggle }: { open: boolean; onToggle: () => void; count?: number }) {
   return (
     <button
       type="button"
@@ -126,27 +128,25 @@ function LibraryToggle({ open, onToggle, count }: { open: boolean; onToggle: () 
       aria-pressed={open}
       title={open ? "隐藏计算任务卡库" : "显示计算任务卡库"}
       className={cn(
-        "inline-flex h-9 items-center gap-2 rounded-full border px-4 text-[13px] font-medium transition-all duration-200",
+        "inline-flex h-9 w-9 items-center justify-center rounded-full border transition-all duration-200",
         open
-          ? "border-primary/30 bg-primary-soft text-primary shadow-[inset_0_0_0_1px_oklch(0.62_0.22_295/0.08)]"
+          ? "border-primary/30 bg-primary-soft text-primary"
           : "border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-primary",
       )}
     >
       <span
         className={cn(
-          "relative inline-flex h-3.5 w-7 items-center rounded-full transition-colors",
+          "relative inline-flex h-4 w-7 items-center rounded-full transition-colors",
           open ? "bg-primary" : "bg-border",
         )}
       >
         <span
           className={cn(
-            "absolute h-2.5 w-2.5 rounded-full bg-white shadow-sm transition-transform duration-200",
+            "absolute h-3 w-3 rounded-full bg-white shadow-sm transition-transform duration-200",
             open ? "translate-x-3.5" : "translate-x-0.5",
           )}
         />
       </span>
-      <Workflow className="h-3.5 w-3.5" />
-      <span>计算任务卡{count > 0 && <span className="ml-1 tabular-nums opacity-80">· {count}</span>}</span>
     </button>
   );
 }

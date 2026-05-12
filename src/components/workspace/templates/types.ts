@@ -20,6 +20,7 @@ export interface Card {
   enabled: boolean;
   advancedOpen: boolean;
   params: Param[];
+  group?: string;
 }
 
 export interface ModuleData {

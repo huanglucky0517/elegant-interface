@@ -129,6 +129,30 @@ const emCards: Card[] = [
   ], { enabled: false }),
 ];
 
+// Group assignments for EM cards
+const emGroupMap: Record<string, string> = {
+  "em-resistance": "基础特性",
+  "em-static": "基础特性",
+  "em-fluxlink": "基础特性",
+  "em-airgap": "基础特性",
+  "em-emf": "基础特性",
+  "em-inductance": "基础特性",
+  "em-cogging": "转矩与力",
+  "em-torque": "转矩与力",
+  "em-radial": "转矩与力",
+  "em-rated": "工况分析",
+  "em-overload": "工况分析",
+  "em-curve": "工况分析",
+  "em-map": "工况分析",
+  "em-short": "故障与安全",
+  "em-demag": "故障与安全",
+  "em-loss": "损耗与材料",
+  "em-mass": "损耗与材料",
+};
+emCards.forEach((card) => {
+  card.group = emGroupMap[card.id] ?? "其他";
+});
+
 // ===== 温升 =====
 const thermalCards: Card[] = [
   c("th-loss", "损耗输入", [

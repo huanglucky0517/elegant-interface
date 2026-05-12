@@ -30,9 +30,9 @@ export const Route = createFileRoute("/")({
 function WorkspacePage() {
   return (
     <TemplateProvider>
-      <div className="flex min-h-screen flex-col bg-background text-foreground">
+      <div className="flex h-screen flex-col overflow-hidden bg-background text-foreground">
         <TopBar />
-        <div className="flex flex-1">
+        <div className="flex flex-1 overflow-hidden">
           <LeftNav />
           <Workspace />
           <AnalysisFlow />
@@ -68,9 +68,9 @@ function Workspace() {
   };
 
   return (
-    <main className="flex flex-1 flex-col overflow-hidden">
+    <main className="flex h-full flex-1 flex-col overflow-hidden">
       {/* Toolbar: title + tabs on the left, advanced + close on the right */}
-      <div className="flex flex-wrap items-center justify-between gap-3 px-6 py-4">
+      <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 px-6 py-4">
         <div className="flex flex-wrap items-center gap-4">
           <h1 className="text-[20px] font-semibold tracking-tight text-foreground">
             {moduleTitle[activeModule]}
@@ -104,9 +104,11 @@ function Workspace() {
             {inWorkspace.length === 0 ? (
               <EmptyDropZone />
             ) : (
-              <div className="grid gap-4 [grid-template-columns:repeat(auto-fill,minmax(280px,1fr))]">
+              <div className="gap-4 [column-fill:_balance] [column-gap:1rem] [column-width:280px]">
                 {inWorkspace.map((card) => (
-                  <ParamCard key={card.id} card={card} />
+                  <div key={card.id} className="mb-4 break-inside-avoid">
+                    <ParamCard card={card} />
+                  </div>
                 ))}
               </div>
             )}

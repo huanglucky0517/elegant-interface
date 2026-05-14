@@ -1,20 +1,23 @@
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
-import type { Card, ModuleKey, Param, Template } from "./types";
+import type { Card, Domain, ModuleKey, MotorType, Param, Template } from "./types";
 import { SYSTEM_TEMPLATES } from "./defaults";
 
 interface Ctx {
   templates: Template[];
-  activeId: string;
+  /** Last applied template id (for highlighting in picker only). */
+  appliedId: string | null;
+  /** Detached working copy — independent from any saved template. */
   active: Template;
   activeModule: ModuleKey;
   globalAdvanced: boolean;
 
-  setActiveId: (id: string) => void;
   setActiveModule: (m: ModuleKey) => void;
   setGlobalAdvanced: (v: boolean) => void;
 
-  duplicateAsCustom: (name?: string) => string;
-  createBlank: (name: string) => string;
+  /** Apply a template's content to the working state. The working state is then independent. */
+  applyTemplate: (id: string) => void;
+  /** Save the current working state as a new custom template. Returns the new id. */
+  saveAsTemplate: (name: string, domain: Domain, motorType: MotorType) => string;
   rename: (id: string, name: string) => void;
   remove: (id: string) => void;
 
@@ -30,97 +33,82 @@ const clone = <T,>(v: T): T => JSON.parse(JSON.stringify(v));
 let nextId = 1;
 const newId = () => `tpl-${Date.now()}-${nextId++}`;
 
+const makeWorking = (src: Template): Template => ({
+  ...clone(src),
+  id: "__working__",
+  name: "当前方案",
+  isSystem: false,
+});
+
 export function TemplateProvider({ children }: { children: ReactNode }) {
   const [templates, setTemplates] = useState<Template[]>(() => clone(SYSTEM_TEMPLATES));
-  const [activeId, setActiveId] = useState<string>(SYSTEM_TEMPLATES[0].id);
+  const [working, setWorking] = useState<Template>(() => makeWorking(SYSTEM_TEMPLATES[0]));
+  const [appliedId, setAppliedId] = useState<string | null>(SYSTEM_TEMPLATES[0].id);
   const [activeModule, setActiveModule] = useState<ModuleKey>("em");
   const [globalAdvanced, _setGlobalAdvanced] = useState<boolean>(false);
 
-  const active = useMemo(
-    () => templates.find((t) => t.id === activeId) ?? templates[0],
-    [templates, activeId],
-  );
-
   const setGlobalAdvanced = useCallback((v: boolean) => {
     _setGlobalAdvanced(v);
-    setTemplates((prev) =>
-      prev.map((t) =>
-        t.id !== activeId
-          ? t
-          : {
-              ...t,
-              modules: Object.fromEntries(
-                Object.entries(t.modules).map(([k, m]) => [
-                  k,
-                  { cards: m.cards.map((c) => ({ ...c, advancedOpen: v })) },
-                ]),
-              ) as Template["modules"],
-            },
-      ),
-    );
-  }, [activeId]);
+    setWorking((t) => ({
+      ...t,
+      modules: Object.fromEntries(
+        Object.entries(t.modules).map(([k, m]) => [
+          k,
+          { cards: m.cards.map((c) => ({ ...c, advancedOpen: v })) },
+        ]),
+      ) as Template["modules"],
+    }));
+  }, []);
 
-  const duplicateAsCustom = useCallback(
-    (name?: string) => {
-      const src = templates.find((t) => t.id === activeId)!;
-      const id = newId();
-      const copy: Template = {
-        ...clone(src),
-        id,
-        name: name ?? `${src.name}（副本）`,
-        isSystem: false,
-      };
-      setTemplates((p) => [...p, copy]);
-      setActiveId(id);
-      return id;
+  const applyTemplate = useCallback(
+    (id: string) => {
+      const src = templates.find((t) => t.id === id);
+      if (!src) return;
+      setWorking(makeWorking(src));
+      setAppliedId(id);
     },
-    [templates, activeId],
+    [templates],
   );
 
-  const createBlank = useCallback((name: string) => {
-    const id = newId();
-    const blank: Template = {
-      id,
-      name,
-      isSystem: false,
-      modules: { em: { cards: [] }, thermal: { cards: [] }, stress: { cards: [] }, nvh: { cards: [] } },
-    };
-    setTemplates((p) => [...p, blank]);
-    setActiveId(id);
-    return id;
-  }, []);
+  const saveAsTemplate = useCallback(
+    (name: string, domain: Domain, motorType: MotorType) => {
+      const id = newId();
+      const tpl: Template = {
+        ...clone(working),
+        id,
+        name,
+        domain,
+        motorType,
+        isSystem: false,
+      };
+      setTemplates((p) => [...p, tpl]);
+      setAppliedId(id);
+      return id;
+    },
+    [working],
+  );
 
   const rename = useCallback((id: string, name: string) => {
     setTemplates((p) => p.map((t) => (t.id === id && !t.isSystem ? { ...t, name } : t)));
   }, []);
 
-  const remove = useCallback(
-    (id: string) => {
-      setTemplates((p) => {
-        const tpl = p.find((t) => t.id === id);
-        if (!tpl || tpl.isSystem) return p;
-        const next = p.filter((t) => t.id !== id);
-        if (activeId === id) setActiveId(next[0].id);
-        return next;
-      });
-    },
-    [activeId],
-  );
+  const remove = useCallback((id: string) => {
+    setTemplates((p) => {
+      const tpl = p.find((t) => t.id === id);
+      if (!tpl || tpl.isSystem) return p;
+      return p.filter((t) => t.id !== id);
+    });
+    setAppliedId((cur) => (cur === id ? null : cur));
+  }, []);
 
   const mutateCards = useCallback(
     (fn: (cards: Card[]) => Card[]) => {
-      setTemplates((prev) =>
-        prev.map((t) =>
-          t.id !== activeId
-            ? t
-            : {
-                ...t,
-                modules: { ...t.modules, [activeModule]: { cards: fn(t.modules[activeModule].cards) } },
-              },
-        ),
-      );
+      setWorking((t) => ({
+        ...t,
+        modules: { ...t.modules, [activeModule]: { cards: fn(t.modules[activeModule].cards) } },
+      }));
     },
-    [activeId, activeModule],
+    [activeModule],
   );
 
   const toggleCardEnabled = useCallback(
@@ -152,23 +140,25 @@ export function TemplateProvider({ children }: { children: ReactNode }) {
     [mutateCards],
   );
 
-  const value: Ctx = {
-    templates,
-    activeId,
-    active,
-    activeModule,
-    globalAdvanced,
-    setActiveId,
-    setActiveModule,
-    setGlobalAdvanced,
-    duplicateAsCustom,
-    createBlank,
-    rename,
-    remove,
-    toggleCardEnabled,
-    toggleCardAdvanced,
-    updateParam,
-  };
+  const value: Ctx = useMemo(
+    () => ({
+      templates,
+      appliedId,
+      active: working,
+      activeModule,
+      globalAdvanced,
+      setActiveModule,
+      setGlobalAdvanced,
+      applyTemplate,
+      saveAsTemplate,
+      rename,
+      remove,
+      toggleCardEnabled,
+      toggleCardAdvanced,
+      updateParam,
+    }),
+    [templates, appliedId, working, activeModule, globalAdvanced, setGlobalAdvanced, applyTemplate, saveAsTemplate, rename, remove, toggleCardEnabled, toggleCardAdvanced, updateParam],
+  );
 
   return <TemplateContext.Provider value={value}>{children}</TemplateContext.Provider>;
 }

@@ -94,6 +94,13 @@ export function AnalysisFlow() {
             );
           })}
         </ul>
+
+        <button
+          onClick={openSave}
+          className="mt-3 inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-primary/40 bg-primary-soft/40 text-[12.5px] font-medium text-primary transition-colors hover:bg-primary-soft"
+        >
+          <Save className="h-3.5 w-3.5" /> 保存为模板
+        </button>
       </div>
 
       <div>

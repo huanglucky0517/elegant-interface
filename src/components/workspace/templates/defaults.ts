@@ -198,6 +198,8 @@ export const SYSTEM_TEMPLATE: Template = {
   id: "system-default",
   name: "系统默认 · 综合方案",
   isSystem: true,
+  domain: "通用",
+  motorType: "永磁同步",
   modules: {
     em: mod(emCards),
     thermal: mod(thermalCards),
@@ -220,6 +222,8 @@ export const SYSTEM_LIGHT: Template = {
   id: "system-light",
   name: "系统模板 · 快速评估",
   isSystem: true,
+  domain: "工业驱动",
+  motorType: "永磁同步",
   modules: {
     em: mod(lightenEm),
     thermal: mod(lightenThermal),
@@ -228,4 +232,52 @@ export const SYSTEM_LIGHT: Template = {
   },
 };
 
-export const SYSTEM_TEMPLATES: Template[] = [SYSTEM_TEMPLATE, SYSTEM_LIGHT];
+// EV-focused: emphasizes MAP, overload, demag
+const evEm = emCards.map((card) => ({
+  ...card,
+  enabled: ["em-resistance", "em-static", "em-emf", "em-rated", "em-overload", "em-map", "em-demag", "em-loss"].includes(card.id),
+  advancedOpen: false,
+}));
+const evThermal = thermalCards.map((card) => ({ ...card, enabled: true, advancedOpen: false }));
+const evStress = stressCards.map((card) => ({ ...card, enabled: true, advancedOpen: false }));
+const evNvh = nvhCards.map((card) => ({ ...card, enabled: true, advancedOpen: false }));
+
+export const SYSTEM_EV: Template = {
+  id: "system-ev",
+  name: "新能源车驱动电机模板",
+  isSystem: true,
+  domain: "新能源汽车",
+  motorType: "永磁同步",
+  modules: {
+    em: mod(evEm),
+    thermal: mod(evThermal),
+    stress: mod(evStress),
+    nvh: mod(evNvh),
+  },
+};
+
+// Appliance template: minimal
+const apEm = emCards.map((card) => ({
+  ...card,
+  enabled: ["em-resistance", "em-static", "em-emf", "em-rated", "em-curve"].includes(card.id),
+  advancedOpen: false,
+}));
+const apThermal = thermalCards.map((card, i) => ({ ...card, enabled: i < 2, advancedOpen: false }));
+const apStress = stressCards.map((card) => ({ ...card, enabled: false, advancedOpen: false }));
+const apNvh = nvhCards.map((card) => ({ ...card, enabled: true, advancedOpen: false }));
+
+export const SYSTEM_APPLIANCE: Template = {
+  id: "system-appliance",
+  name: "家电异步电机模板",
+  isSystem: true,
+  domain: "家用电器",
+  motorType: "异步",
+  modules: {
+    em: mod(apEm),
+    thermal: mod(apThermal),
+    stress: mod(apStress),
+    nvh: mod(apNvh),
+  },
+};
+
+export const SYSTEM_TEMPLATES: Template[] = [SYSTEM_TEMPLATE, SYSTEM_LIGHT, SYSTEM_EV, SYSTEM_APPLIANCE];

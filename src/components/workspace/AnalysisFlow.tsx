@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { Check, Circle, Save, X } from "lucide-react";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useTemplates } from "./templates/store";
 import { TemplateBar } from "./TemplateBar";
-import type { ModuleKey } from "./templates/types";
+import { DOMAINS, MOTOR_TYPES } from "./templates/types";
+import type { Domain, ModuleKey, MotorType } from "./templates/types";
 
 interface FlowItem {
   key: ModuleKey;
@@ -27,26 +29,39 @@ const files = [
 ];
 
 export function AnalysisFlow() {
-  const { active, activeModule, setActiveModule, duplicateAsCustom } = useTemplates();
+  const { active, activeModule, setActiveModule, saveAsTemplate } = useTemplates();
   const [saveOpen, setSaveOpen] = useState(false);
   const [saveName, setSaveName] = useState("");
+  const [saveDomain, setSaveDomain] = useState<Domain>("通用");
+  const [saveMotor, setSaveMotor] = useState<MotorType>("永磁同步");
 
   const openSave = () => {
     setSaveName(`${active.name} 副本`);
+    setSaveDomain("通用");
+    setSaveMotor("永磁同步");
     setSaveOpen(true);
   };
   const confirmSave = () => {
     const name = saveName.trim();
     if (!name) return;
-    duplicateAsCustom(name);
+    saveAsTemplate(name, saveDomain, saveMotor);
     setSaveOpen(false);
+    toast.success(`已保存模板「${name}」`);
   };
-
 
   return (
     <aside className="flex w-[280px] shrink-0 flex-col gap-6 border-l border-border bg-surface px-5 py-6">
       <div>
-        <h3 className="text-[15px] font-semibold tracking-tight text-foreground">分析流程</h3>
+        <div className="flex items-center justify-between gap-2">
+          <h3 className="text-[15px] font-semibold tracking-tight text-foreground">分析流程</h3>
+          <button
+            onClick={openSave}
+            className="inline-flex items-center gap-1 rounded-md px-1.5 py-1 text-[12px] font-medium text-primary transition-colors hover:bg-primary-soft"
+            title="保存为模板"
+          >
+            <Save className="h-3.5 w-3.5" /> 保存为模板
+          </button>
+        </div>
         <p className="mt-1 text-[12px] text-muted-foreground">
           选择模板并配置需要分析的流程
         </p>
@@ -94,13 +109,6 @@ export function AnalysisFlow() {
             );
           })}
         </ul>
-
-        <button
-          onClick={openSave}
-          className="mt-3 inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-primary/40 bg-primary-soft/40 text-[12.5px] font-medium text-primary transition-colors hover:bg-primary-soft"
-        >
-          <Save className="h-3.5 w-3.5" /> 保存为模板
-        </button>
       </div>
 
       <div>
@@ -138,7 +146,7 @@ export function AnalysisFlow() {
           onClick={() => setSaveOpen(false)}
         >
           <div
-            className="w-[380px] rounded-xl border border-border bg-popover p-4 shadow-[var(--shadow-elegant)]"
+            className="w-[400px] rounded-xl border border-border bg-popover p-4 shadow-[var(--shadow-elegant)]"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-3 flex items-center justify-between">
@@ -147,6 +155,7 @@ export function AnalysisFlow() {
                 <X className="h-4 w-4" />
               </button>
             </div>
+
             <label className="mb-1.5 block text-[12px] text-muted-foreground">模板名称</label>
             <input
               autoFocus
@@ -159,6 +168,38 @@ export function AnalysisFlow() {
               placeholder="请输入模板名称"
               className="h-9 w-full rounded-md border border-input bg-background px-3 text-[13px] focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
             />
+
+            <div className="mt-3 grid grid-cols-2 gap-3">
+              <div>
+                <label className="mb-1.5 block text-[12px] text-muted-foreground">应用领域</label>
+                <select
+                  value={saveDomain}
+                  onChange={(e) => setSaveDomain(e.target.value as Domain)}
+                  className="h-9 w-full rounded-md border border-input bg-background px-2 text-[13px] focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                >
+                  {DOMAINS.map((d) => (
+                    <option key={d} value={d}>
+                      {d}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="mb-1.5 block text-[12px] text-muted-foreground">电机类型</label>
+                <select
+                  value={saveMotor}
+                  onChange={(e) => setSaveMotor(e.target.value as MotorType)}
+                  className="h-9 w-full rounded-md border border-input bg-background px-2 text-[13px] focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                >
+                  {MOTOR_TYPES.map((m) => (
+                    <option key={m} value={m}>
+                      {m}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
             <div className="mt-4 flex items-center justify-end gap-2">
               <button
                 onClick={() => setSaveOpen(false)}

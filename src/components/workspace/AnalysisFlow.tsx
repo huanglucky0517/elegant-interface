@@ -27,7 +27,21 @@ const files = [
 ];
 
 export function AnalysisFlow() {
-  const { active, activeModule, setActiveModule } = useTemplates();
+  const { active, activeModule, setActiveModule, duplicateAsCustom } = useTemplates();
+  const [saveOpen, setSaveOpen] = useState(false);
+  const [saveName, setSaveName] = useState("");
+
+  const openSave = () => {
+    setSaveName(`${active.name} 副本`);
+    setSaveOpen(true);
+  };
+  const confirmSave = () => {
+    const name = saveName.trim();
+    if (!name) return;
+    duplicateAsCustom(name);
+    setSaveOpen(false);
+  };
+
 
   return (
     <aside className="flex w-[280px] shrink-0 flex-col gap-6 border-l border-border bg-surface px-5 py-6">

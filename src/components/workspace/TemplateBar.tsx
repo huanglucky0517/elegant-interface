@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ChevronDown, Plus, Pencil, Trash2, Copy, FileText, Check, X } from "lucide-react";
+import { Plus, Pencil, Trash2, Copy, FileText, Check, X, FolderOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTemplates } from "./templates/store";
 
@@ -7,6 +7,7 @@ export function TemplateBar() {
   const { templates, active, activeId, setActiveId, duplicateAsCustom, createBlank, rename, remove } =
     useTemplates();
   const [open, setOpen] = useState(false);
+  const [pendingId, setPendingId] = useState<string>(activeId);
   const [renaming, setRenaming] = useState<string | null>(null);
   const [draftName, setDraftName] = useState("");
 
@@ -19,42 +20,56 @@ export function TemplateBar() {
     setRenaming(null);
   };
 
+  const openDialog = () => {
+    setPendingId(activeId);
+    setOpen(true);
+  };
+
+  const confirmApply = () => {
+    if (pendingId && pendingId !== activeId) setActiveId(pendingId);
+    setOpen(false);
+  };
+
   return (
-    <div className="relative w-full">
+    <>
       <button
         type="button"
-        onClick={() => setOpen((v) => !v)}
+        onClick={openDialog}
         className="inline-flex h-9 w-full items-center justify-between gap-2 rounded-lg border border-border bg-card px-3 text-[12.5px] font-medium text-foreground transition-colors hover:border-primary/40"
       >
         <span className="inline-flex min-w-0 items-center gap-2 truncate">
-          <FileText className="h-3.5 w-3.5 shrink-0 text-primary" />
-          <span className="truncate">{active.name}</span>
-          {active.isSystem && (
-            <span className="shrink-0 rounded-full bg-primary-soft px-1.5 py-0.5 text-[10px] text-primary">
-              系统
-            </span>
-          )}
+          <FolderOpen className="h-3.5 w-3.5 shrink-0 text-primary" />
+          <span className="truncate">选择模板</span>
         </span>
-        <ChevronDown className={cn("h-3.5 w-3.5 shrink-0", open && "rotate-180")} />
+        <span className="shrink-0 truncate text-[11px] text-muted-foreground">{active.name}</span>
       </button>
 
       {open && (
-        <>
-          <div className="fixed inset-0 z-30" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 top-11 z-40 w-[320px] rounded-xl border border-border bg-popover p-2 shadow-[var(--shadow-elegant)]">
-            <div className="px-2 py-1.5 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-              模板库
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setOpen(false)}>
+          <div
+            className="w-[420px] rounded-xl border border-border bg-popover p-4 shadow-[var(--shadow-elegant)]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-3 flex items-center justify-between">
+              <h4 className="text-[14px] font-semibold text-foreground">选择模板</h4>
+              <button
+                onClick={() => setOpen(false)}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-4 w-4" />
+              </button>
             </div>
-            <ul className="max-h-[320px] overflow-auto">
+
+            <ul className="max-h-[320px] overflow-auto rounded-lg border border-border">
               {templates.map((t) => {
-                const isActive = t.id === activeId;
+                const isPending = t.id === pendingId;
                 const isRenaming = renaming === t.id;
                 return (
                   <li
                     key={t.id}
                     className={cn(
-                      "group flex items-center gap-2 rounded-lg px-2 py-2 text-[13px] transition-colors",
-                      isActive ? "bg-primary-soft text-primary" : "hover:bg-muted",
+                      "group flex items-center gap-2 border-b border-border px-2.5 py-2 text-[13px] transition-colors last:border-b-0",
+                      isPending ? "bg-primary-soft text-primary" : "hover:bg-muted",
                     )}
                   >
                     {isRenaming ? (
@@ -69,18 +84,10 @@ export function TemplateBar() {
                           }}
                           className="h-7 flex-1 rounded-md border border-input bg-background px-2 text-[13px] focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                         />
-                        <button
-                          onClick={commitRename}
-                          className="text-primary hover:text-primary/80"
-                          title="确定"
-                        >
+                        <button onClick={commitRename} className="text-primary hover:text-primary/80" title="确定">
                           <Check className="h-3.5 w-3.5" />
                         </button>
-                        <button
-                          onClick={() => setRenaming(null)}
-                          className="text-muted-foreground hover:text-foreground"
-                          title="取消"
-                        >
+                        <button onClick={() => setRenaming(null)} className="text-muted-foreground hover:text-foreground" title="取消">
                           <X className="h-3.5 w-3.5" />
                         </button>
                       </>
@@ -88,7 +95,8 @@ export function TemplateBar() {
                       <>
                         <button
                           className="flex flex-1 items-center gap-2 truncate text-left"
-                          onClick={() => {
+                          onClick={() => setPendingId(t.id)}
+                          onDoubleClick={() => {
                             setActiveId(t.id);
                             setOpen(false);
                           }}
@@ -132,29 +140,43 @@ export function TemplateBar() {
               })}
             </ul>
 
-            <div className="mt-1 grid grid-cols-2 gap-1 border-t border-border pt-2">
+            <div className="mt-3 grid grid-cols-2 gap-2">
               <button
-                onClick={() => {
-                  duplicateAsCustom();
-                  setOpen(false);
-                }}
-                className="inline-flex items-center justify-center gap-1.5 rounded-md py-1.5 text-[12px] text-foreground/80 transition-colors hover:bg-muted hover:text-primary"
+                onClick={() => duplicateAsCustom()}
+                className="inline-flex items-center justify-center gap-1.5 rounded-md border border-border py-1.5 text-[12px] text-foreground/80 transition-colors hover:bg-muted hover:text-primary"
               >
                 <Copy className="h-3.5 w-3.5" /> 基于当前复制
               </button>
               <button
                 onClick={() => {
-                  const id = createBlank(`新模板 ${templates.filter((t) => !t.isSystem).length + 1}`);
-                  startRename(id, `新模板 ${templates.filter((t) => !t.isSystem).length + 1}`);
+                  const baseName = `新模板 ${templates.filter((t) => !t.isSystem).length + 1}`;
+                  const id = createBlank(baseName);
+                  setPendingId(id);
+                  startRename(id, baseName);
                 }}
-                className="inline-flex items-center justify-center gap-1.5 rounded-md py-1.5 text-[12px] text-primary transition-colors hover:bg-primary-soft"
+                className="inline-flex items-center justify-center gap-1.5 rounded-md border border-border py-1.5 text-[12px] text-primary transition-colors hover:bg-primary-soft"
               >
-                <Plus className="h-3.5 w-3.5" /> 新建空模板
+                <Plus className="h-3.5 w-3.5" /> 新建模板
+              </button>
+            </div>
+
+            <div className="mt-3 flex items-center justify-end gap-2 border-t border-border pt-3">
+              <button
+                onClick={() => setOpen(false)}
+                className="inline-flex h-8 items-center rounded-md border border-border px-3 text-[12px] text-foreground/80 hover:bg-muted"
+              >
+                取消
+              </button>
+              <button
+                onClick={confirmApply}
+                className="inline-flex h-8 items-center rounded-md bg-primary px-4 text-[12px] font-medium text-primary-foreground hover:bg-primary/90"
+              >
+                确定
               </button>
             </div>
           </div>
-        </>
+        </div>
       )}
-    </div>
+    </>
   );
 }

@@ -1,4 +1,5 @@
-import { Check, Circle } from "lucide-react";
+import { useState } from "react";
+import { Check, Circle, Save, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTemplates } from "./templates/store";
 import { TemplateBar } from "./TemplateBar";
@@ -26,7 +27,21 @@ const files = [
 ];
 
 export function AnalysisFlow() {
-  const { active, activeModule, setActiveModule } = useTemplates();
+  const { active, activeModule, setActiveModule, duplicateAsCustom } = useTemplates();
+  const [saveOpen, setSaveOpen] = useState(false);
+  const [saveName, setSaveName] = useState("");
+
+  const openSave = () => {
+    setSaveName(`${active.name} 副本`);
+    setSaveOpen(true);
+  };
+  const confirmSave = () => {
+    const name = saveName.trim();
+    if (!name) return;
+    duplicateAsCustom(name);
+    setSaveOpen(false);
+  };
+
 
   return (
     <aside className="flex w-[280px] shrink-0 flex-col gap-6 border-l border-border bg-surface px-5 py-6">
@@ -79,6 +94,13 @@ export function AnalysisFlow() {
             );
           })}
         </ul>
+
+        <button
+          onClick={openSave}
+          className="mt-3 inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-primary/40 bg-primary-soft/40 text-[12.5px] font-medium text-primary transition-colors hover:bg-primary-soft"
+        >
+          <Save className="h-3.5 w-3.5" /> 保存为模板
+        </button>
       </div>
 
       <div>
@@ -109,6 +131,52 @@ export function AnalysisFlow() {
       <button className="mt-auto inline-flex h-11 items-center justify-center rounded-xl bg-[image:var(--gradient-primary)] text-[14px] font-semibold text-primary-foreground shadow-[var(--shadow-elegant)] transition-transform hover:scale-[1.01] active:scale-[0.99]">
         初始方案设计
       </button>
+
+      {saveOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+          onClick={() => setSaveOpen(false)}
+        >
+          <div
+            className="w-[380px] rounded-xl border border-border bg-popover p-4 shadow-[var(--shadow-elegant)]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-3 flex items-center justify-between">
+              <h4 className="text-[14px] font-semibold text-foreground">保存为模板</h4>
+              <button onClick={() => setSaveOpen(false)} className="text-muted-foreground hover:text-foreground">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <label className="mb-1.5 block text-[12px] text-muted-foreground">模板名称</label>
+            <input
+              autoFocus
+              value={saveName}
+              onChange={(e) => setSaveName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") confirmSave();
+                if (e.key === "Escape") setSaveOpen(false);
+              }}
+              placeholder="请输入模板名称"
+              className="h-9 w-full rounded-md border border-input bg-background px-3 text-[13px] focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+            />
+            <div className="mt-4 flex items-center justify-end gap-2">
+              <button
+                onClick={() => setSaveOpen(false)}
+                className="inline-flex h-8 items-center rounded-md border border-border px-3 text-[12px] text-foreground/80 hover:bg-muted"
+              >
+                取消
+              </button>
+              <button
+                onClick={confirmSave}
+                disabled={!saveName.trim()}
+                className="inline-flex h-8 items-center rounded-md bg-primary px-4 text-[12px] font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+              >
+                确定
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </aside>
   );
 }

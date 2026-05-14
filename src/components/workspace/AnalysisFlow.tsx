@@ -131,6 +131,52 @@ export function AnalysisFlow() {
       <button className="mt-auto inline-flex h-11 items-center justify-center rounded-xl bg-[image:var(--gradient-primary)] text-[14px] font-semibold text-primary-foreground shadow-[var(--shadow-elegant)] transition-transform hover:scale-[1.01] active:scale-[0.99]">
         初始方案设计
       </button>
+
+      {saveOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+          onClick={() => setSaveOpen(false)}
+        >
+          <div
+            className="w-[380px] rounded-xl border border-border bg-popover p-4 shadow-[var(--shadow-elegant)]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-3 flex items-center justify-between">
+              <h4 className="text-[14px] font-semibold text-foreground">保存为模板</h4>
+              <button onClick={() => setSaveOpen(false)} className="text-muted-foreground hover:text-foreground">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <label className="mb-1.5 block text-[12px] text-muted-foreground">模板名称</label>
+            <input
+              autoFocus
+              value={saveName}
+              onChange={(e) => setSaveName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") confirmSave();
+                if (e.key === "Escape") setSaveOpen(false);
+              }}
+              placeholder="请输入模板名称"
+              className="h-9 w-full rounded-md border border-input bg-background px-3 text-[13px] focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+            />
+            <div className="mt-4 flex items-center justify-end gap-2">
+              <button
+                onClick={() => setSaveOpen(false)}
+                className="inline-flex h-8 items-center rounded-md border border-border px-3 text-[12px] text-foreground/80 hover:bg-muted"
+              >
+                取消
+              </button>
+              <button
+                onClick={confirmSave}
+                disabled={!saveName.trim()}
+                className="inline-flex h-8 items-center rounded-md bg-primary px-4 text-[12px] font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+              >
+                确定
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </aside>
   );
 }

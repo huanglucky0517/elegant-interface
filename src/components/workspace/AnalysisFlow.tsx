@@ -1,4 +1,5 @@
-import { Check, Circle } from "lucide-react";
+import { useState } from "react";
+import { Check, Circle, Save, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTemplates } from "./templates/store";
 import { TemplateBar } from "./TemplateBar";

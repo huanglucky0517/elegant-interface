@@ -27,9 +27,17 @@ export interface ModuleData {
   cards: Card[];
 }
 
+export type Domain = "工业驱动" | "新能源汽车" | "家用电器" | "航空航天" | "通用";
+export type MotorType = "永磁同步" | "异步" | "直流有刷" | "无刷直流" | "步进";
+
+export const DOMAINS: Domain[] = ["工业驱动", "新能源汽车", "家用电器", "航空航天", "通用"];
+export const MOTOR_TYPES: MotorType[] = ["永磁同步", "异步", "直流有刷", "无刷直流", "步进"];
+
 export interface Template {
   id: string;
   name: string;
   isSystem: boolean;
+  domain: Domain;
+  motorType: MotorType;
   modules: Record<ModuleKey, ModuleData>;
 }

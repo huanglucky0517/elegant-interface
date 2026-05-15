@@ -83,8 +83,10 @@ export function TemplateProvider({ children }: { children: ReactNode }) {
         domain,
         motorType,
         isSystem: false,
+        usageCount: 0,
+        createdAt: Date.now(),
       };
-      setTemplates((p) => [...p, tpl]);
+      setTemplates((p) => [tpl, ...p]);
       setAppliedId(id);
       return id;
     },

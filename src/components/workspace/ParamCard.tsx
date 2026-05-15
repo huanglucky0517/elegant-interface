@@ -144,7 +144,7 @@ function ParamInput({ param, onChange }: { param: Param; onChange: (v: Param["va
         <select
           value={param.value as string}
           onChange={(e) => onChange(e.target.value)}
-          className="h-7 w-28 rounded-md border border-input bg-background px-2 text-[13px] focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+          className="h-7 w-28 rounded-md border border-input bg-background pl-2 pr-1 text-[13px] focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
         >
           {(param.options ?? []).map((o) => (
             <option key={o} value={o}>

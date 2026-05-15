@@ -115,11 +115,19 @@ export function TemplateBar() {
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return templates.filter(
-      (t) =>
-        (domainFilter === "全部" || t.domain === domainFilter) &&
-        (!q || t.name.toLowerCase().includes(q) || t.motorType.toLowerCase().includes(q)),
-    );
+    return templates
+      .filter(
+        (t) =>
+          (domainFilter === "全部" || t.domain === domainFilter) &&
+          (!q || t.name.toLowerCase().includes(q) || t.motorType.toLowerCase().includes(q)),
+      )
+      .slice()
+      .sort((a, b) => {
+        const ua = a.usageCount ?? 0;
+        const ub = b.usageCount ?? 0;
+        if (ub !== ua) return ub - ua;
+        return (b.createdAt ?? 0) - (a.createdAt ?? 0);
+      });
   }, [templates, query, domainFilter]);
 
   return (

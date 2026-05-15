@@ -40,4 +40,8 @@ export interface Template {
   domain: Domain;
   motorType: MotorType;
   modules: Record<ModuleKey, ModuleData>;
+  /** Sort weight: number of times this template was applied. */
+  usageCount?: number;
+  /** Creation timestamp (ms). System templates may omit this. */
+  createdAt?: number;
 }

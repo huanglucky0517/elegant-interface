@@ -56,7 +56,7 @@ export function AnalysisFlow() {
           <h3 className="text-[15px] font-semibold tracking-tight text-foreground">分析流程</h3>
           <button
             onClick={openSave}
-            className="inline-flex items-center gap-1 rounded-md px-1.5 py-1 text-[12px] font-medium text-primary transition-colors hover:bg-primary-soft"
+            className="inline-flex h-7 items-center gap-1 rounded-md border border-primary/40 bg-primary-soft px-2.5 text-[12px] font-medium text-primary shadow-sm transition-colors hover:bg-primary hover:text-primary-foreground"
             title="保存为模板"
           >
             <Save className="h-3.5 w-3.5" /> 保存为模板

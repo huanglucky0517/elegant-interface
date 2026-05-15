@@ -175,7 +175,7 @@ export function AnalysisFlow() {
                 <select
                   value={saveDomain}
                   onChange={(e) => setSaveDomain(e.target.value as Domain)}
-                  className="h-9 w-full rounded-md border border-input bg-background px-2 text-[13px] focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  className="h-9 w-full rounded-md border border-input bg-background px-3 text-[13px] focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                 >
                   {DOMAINS.map((d) => (
                     <option key={d} value={d}>
@@ -189,7 +189,7 @@ export function AnalysisFlow() {
                 <select
                   value={saveMotor}
                   onChange={(e) => setSaveMotor(e.target.value as MotorType)}
-                  className="h-9 w-full rounded-md border border-input bg-background px-2 text-[13px] focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  className="h-9 w-full rounded-md border border-input bg-background px-3 text-[13px] focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                 >
                   {MOTOR_TYPES.map((m) => (
                     <option key={m} value={m}>

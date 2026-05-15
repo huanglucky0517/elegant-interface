@@ -66,6 +66,9 @@ export function TemplateProvider({ children }: { children: ReactNode }) {
       if (!src) return;
       setWorking(makeWorking(src));
       setAppliedId(id);
+      setTemplates((p) =>
+        p.map((t) => (t.id === id ? { ...t, usageCount: (t.usageCount ?? 0) + 1 } : t)),
+      );
     },
     [templates],
   );
@@ -80,8 +83,10 @@ export function TemplateProvider({ children }: { children: ReactNode }) {
         domain,
         motorType,
         isSystem: false,
+        usageCount: 0,
+        createdAt: Date.now(),
       };
-      setTemplates((p) => [...p, tpl]);
+      setTemplates((p) => [tpl, ...p]);
       setAppliedId(id);
       return id;
     },

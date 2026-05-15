@@ -132,7 +132,7 @@ function ParamInput({ param, onChange }: { param: Param; onChange: (v: Param["va
           type="number"
           value={param.value as number}
           onChange={(e) => onChange(Number(e.target.value))}
-          className="h-7 w-24 rounded-md border border-input bg-background pl-2 pr-1 text-right text-[13px] tabular-nums text-foreground transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+          className="h-7 w-24 rounded-md border border-input bg-background pl-2 pr-2 text-right text-[13px] tabular-nums text-foreground transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
         />
       );
     case "yesno":
@@ -144,7 +144,7 @@ function ParamInput({ param, onChange }: { param: Param; onChange: (v: Param["va
         <select
           value={param.value as string}
           onChange={(e) => onChange(e.target.value)}
-          className="h-7 w-28 rounded-md border border-input bg-background pl-2 pr-1 text-[13px] focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+          className="h-7 w-28 rounded-md border border-input bg-background pl-2 pr-2 text-[13px] focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
         >
           {(param.options ?? []).map((o) => (
             <option key={o} value={o}>
@@ -224,7 +224,7 @@ function MiniCheckbox({ value, onChange }: { value: boolean; onChange: (v: boole
 export const NumInput = ({ value }: { value: string | number }) => (
   <input
     defaultValue={value}
-    className="h-7 w-20 rounded-md border border-input bg-background pl-2 pr-1 text-right text-[13px] tabular-nums"
+    className="h-7 w-20 rounded-md border border-input bg-background pl-2 pr-2 text-right text-[13px] tabular-nums"
   />
 );
 export const ParamRowLegacy = (_: { label: string; hint?: boolean; children: ReactNode }) => null;

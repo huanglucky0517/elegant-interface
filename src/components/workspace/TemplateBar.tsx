@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Pencil, Trash2, FileText, Check, X, LayoutGrid, Search, AlertTriangle } from "lucide-react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { Pencil, Trash2, FileText, Check, X, LayoutGrid, Search, AlertTriangle, GripVertical } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useTemplates } from "./templates/store";
@@ -14,8 +14,11 @@ const domainColor: Record<Domain, string> = {
   航空航天: "oklch(0.62 0.16 160)",
 };
 
+const POPUP_W = 460;
+const POPUP_H = 520;
+
 export function TemplateBar() {
-  const { templates, active, appliedId, applyTemplate, rename, remove } = useTemplates();
+  const { templates, appliedId, applyTemplate, rename, remove } = useTemplates();
   const [open, setOpen] = useState(false);
   const [pendingId, setPendingId] = useState<string | null>(appliedId);
   const [renaming, setRenaming] = useState<string | null>(null);
@@ -23,8 +26,25 @@ export function TemplateBar() {
   const [query, setQuery] = useState("");
   const [domainFilter, setDomainFilter] = useState<Domain | "全部">("全部");
   const [confirmDel, setConfirmDel] = useState<string | null>(null);
+  const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
   const popRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
+  const dragRef = useRef<{ dx: number; dy: number } | null>(null);
+
+  // Compute initial position when opening, clamped to viewport
+  useLayoutEffect(() => {
+    if (!open) return;
+    const r = triggerRef.current?.getBoundingClientRect();
+    if (!r) return;
+    const margin = 8;
+    const w = popRef.current?.offsetWidth ?? POPUP_W;
+    const h = popRef.current?.offsetHeight ?? POPUP_H;
+    let x = r.left;
+    let y = r.bottom + 6;
+    x = Math.min(Math.max(margin, x), window.innerWidth - w - margin);
+    y = Math.min(Math.max(margin, y), window.innerHeight - h - margin);
+    setPos({ x, y });
+  }, [open]);
 
   // Click-outside to close
   useEffect(() => {
@@ -37,6 +57,38 @@ export function TemplateBar() {
     document.addEventListener("mousedown", onDown);
     return () => document.removeEventListener("mousedown", onDown);
   }, [open]);
+
+  // Drag handlers
+  useEffect(() => {
+    const onMove = (e: MouseEvent) => {
+      if (!dragRef.current || !popRef.current) return;
+      const w = popRef.current.offsetWidth;
+      const h = popRef.current.offsetHeight;
+      const margin = 4;
+      let x = e.clientX - dragRef.current.dx;
+      let y = e.clientY - dragRef.current.dy;
+      x = Math.min(Math.max(margin, x), window.innerWidth - w - margin);
+      y = Math.min(Math.max(margin, y), window.innerHeight - h - margin);
+      setPos({ x, y });
+    };
+    const onUp = () => {
+      dragRef.current = null;
+      document.body.style.userSelect = "";
+    };
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+    return () => {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+    };
+  }, []);
+
+  const startDrag = (e: React.MouseEvent) => {
+    if (!popRef.current) return;
+    const r = popRef.current.getBoundingClientRect();
+    dragRef.current = { dx: e.clientX - r.left, dy: e.clientY - r.top };
+    document.body.style.userSelect = "none";
+  };
 
   const startRename = (id: string, current: string) => {
     setRenaming(id);
@@ -80,26 +132,38 @@ export function TemplateBar() {
       >
         <LayoutGrid className="h-3.5 w-3.5" />
         <span className="underline-offset-4 group-hover:underline">选择模板</span>
-        <span className="ml-1 max-w-[120px] truncate text-[11.5px] font-normal text-muted-foreground">
-          · {active.name}
-        </span>
       </button>
 
       {open && (
         <div
           ref={popRef}
-          className="absolute left-0 top-full z-40 mt-2 w-[460px] rounded-2xl border border-border/60 bg-popover p-0 shadow-[0_12px_40px_-8px_rgba(0,0,0,0.18)] ring-1 ring-black/5"
+          style={{
+            position: "fixed",
+            left: pos?.x ?? -9999,
+            top: pos?.y ?? -9999,
+            width: POPUP_W,
+            visibility: pos ? "visible" : "hidden",
+          }}
+          className="z-50 rounded-2xl border border-border/60 bg-popover p-0 shadow-[0_12px_40px_-8px_rgba(0,0,0,0.18)] ring-1 ring-black/5"
         >
-          {/* Header */}
-          <div className="flex items-center justify-between border-b border-border/60 px-4 py-3">
+          {/* Header (drag handle) */}
+          <div
+            onMouseDown={startDrag}
+            className="flex cursor-move items-center justify-between border-b border-border/60 px-4 py-3 select-none"
+          >
             <div className="flex items-center gap-2">
+              <GripVertical className="h-3.5 w-3.5 text-muted-foreground/60" />
               <LayoutGrid className="h-4 w-4 text-primary" />
               <h4 className="text-[14px] font-semibold text-foreground">模板库</h4>
               <span className="rounded-full bg-muted px-2 py-0.5 text-[10.5px] tabular-nums text-muted-foreground">
                 {templates.length}
               </span>
             </div>
-            <button onClick={() => setOpen(false)} className="text-muted-foreground hover:text-foreground">
+            <button
+              onClick={() => setOpen(false)}
+              onMouseDown={(e) => e.stopPropagation()}
+              className="text-muted-foreground hover:text-foreground"
+            >
               <X className="h-4 w-4" />
             </button>
           </div>
@@ -153,11 +217,6 @@ export function TemplateBar() {
                       key={t.id}
                       role="button"
                       onClick={() => !isRenaming && setPendingId(t.id)}
-                      onDoubleClick={() => {
-                        applyTemplate(t.id);
-                        toast.success(`已应用模板「${t.name}」`);
-                        setOpen(false);
-                      }}
                       className={cn(
                         "group relative cursor-pointer rounded-xl border bg-card p-3 transition-all",
                         isPending
@@ -165,14 +224,16 @@ export function TemplateBar() {
                           : "border-border/60 hover:border-primary/40 hover:shadow-sm",
                       )}
                     >
-                      {/* Cover strip */}
-                      <div
-                        className="mb-2 flex h-14 items-center justify-center rounded-md"
-                        style={{
-                          background: `linear-gradient(135deg, color-mix(in oklab, ${dColor} 18%, transparent), color-mix(in oklab, ${dColor} 6%, transparent))`,
-                        }}
-                      >
-                        <FileText className="h-6 w-6" style={{ color: dColor }} />
+                      {/* Header row: 32x32 icon top-left */}
+                      <div className="mb-2 flex items-start gap-2">
+                        <div
+                          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md"
+                          style={{
+                            background: `color-mix(in oklab, ${dColor} 14%, transparent)`,
+                          }}
+                        >
+                          <FileText className="h-4 w-4" style={{ color: dColor }} />
+                        </div>
                       </div>
 
                       {/* Name */}
@@ -187,7 +248,7 @@ export function TemplateBar() {
                               if (e.key === "Enter") commitRename();
                               if (e.key === "Escape") setRenaming(null);
                             }}
-                            className="h-6 w-full rounded border border-input bg-background px-1.5 text-[12px] focus:border-primary focus:outline-none"
+                            className="h-6 w-full rounded border border-input bg-background pl-1.5 pr-1 text-[12px] focus:border-primary focus:outline-none"
                           />
                           <button
                             onClick={(e) => {
@@ -264,25 +325,20 @@ export function TemplateBar() {
           </div>
 
           {/* Footer */}
-          <div className="flex items-center justify-between border-t border-border/60 px-4 py-2.5">
-            <span className="text-[11.5px] text-muted-foreground">
-              {pendingId ? "单击选择 · 双击直接应用" : "请选择一个模板"}
-            </span>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setOpen(false)}
-                className="inline-flex h-7 items-center rounded-md border border-border px-3 text-[12px] text-foreground/80 hover:bg-muted"
-              >
-                取消
-              </button>
-              <button
-                onClick={confirmApply}
-                disabled={!pendingId}
-                className="inline-flex h-7 items-center rounded-md bg-primary px-4 text-[12px] font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-              >
-                应用
-              </button>
-            </div>
+          <div className="flex items-center justify-end gap-2 border-t border-border/60 px-4 py-2.5">
+            <button
+              onClick={() => setOpen(false)}
+              className="inline-flex h-7 items-center rounded-md border border-border px-3 text-[12px] text-foreground/80 hover:bg-muted"
+            >
+              取消
+            </button>
+            <button
+              onClick={confirmApply}
+              disabled={!pendingId}
+              className="inline-flex h-7 items-center rounded-md bg-primary px-4 text-[12px] font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+            >
+              应用
+            </button>
           </div>
         </div>
       )}

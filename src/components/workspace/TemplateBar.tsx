@@ -1,21 +1,20 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { Pencil, Trash2, FileText, Check, X, LayoutGrid, Search, AlertTriangle, GripVertical } from "lucide-react";
+import { Pencil, Trash2, Check, X, LayoutGrid, Search, AlertTriangle, GripVertical } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useTemplates } from "./templates/store";
 import { DOMAINS } from "./templates/types";
 import type { Domain } from "./templates/types";
 
-const domainColor: Record<Domain, string> = {
-  通用: "oklch(0.7 0.04 260)",
-  工业驱动: "oklch(0.62 0.18 230)",
-  新能源汽车: "oklch(0.62 0.22 295)",
-  家用电器: "oklch(0.7 0.16 40)",
-  航空航天: "oklch(0.62 0.16 160)",
-};
+const POPUP_W = 600;
+const POPUP_H = 560;
 
-const POPUP_W = 460;
-const POPUP_H = 520;
+const formatDate = (ts?: number) => {
+  if (!ts) return "系统内置";
+  const d = new Date(ts);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+};
 
 export function TemplateBar() {
   const { templates, appliedId, applyTemplate, rename, remove } = useTemplates();
@@ -31,7 +30,6 @@ export function TemplateBar() {
   const triggerRef = useRef<HTMLButtonElement>(null);
   const dragRef = useRef<{ dx: number; dy: number } | null>(null);
 
-  // Compute initial position when opening, clamped to viewport
   useLayoutEffect(() => {
     if (!open) return;
     const r = triggerRef.current?.getBoundingClientRect();
@@ -46,7 +44,6 @@ export function TemplateBar() {
     setPos({ x, y });
   }, [open]);
 
-  // Click-outside to close
   useEffect(() => {
     if (!open) return;
     const onDown = (e: MouseEvent) => {
@@ -58,7 +55,6 @@ export function TemplateBar() {
     return () => document.removeEventListener("mousedown", onDown);
   }, [open]);
 
-  // Drag handlers
   useEffect(() => {
     const onMove = (e: MouseEvent) => {
       if (!dragRef.current || !popRef.current) return;
@@ -154,7 +150,7 @@ export function TemplateBar() {
           }}
           className="z-50 rounded-2xl border border-border/60 bg-popover p-0 shadow-[0_12px_40px_-8px_rgba(0,0,0,0.18)] ring-1 ring-black/5"
         >
-          {/* Header (drag handle) */}
+          {/* Header */}
           <div
             onMouseDown={startDrag}
             className="flex cursor-move items-center justify-between border-b border-border/60 px-4 py-3 select-none"
@@ -208,127 +204,115 @@ export function TemplateBar() {
             })}
           </div>
 
-          {/* Card grid */}
-          <div className="max-h-[340px] overflow-auto px-4 pb-3">
+          {/* Single-column list */}
+          <div className="max-h-[360px] overflow-auto px-4 pb-3">
             {filtered.length === 0 ? (
               <div className="flex h-24 items-center justify-center text-[12px] text-muted-foreground">
                 未找到匹配模板
               </div>
             ) : (
-              <div className="grid grid-cols-2 gap-2.5">
+              <ul className="flex flex-col gap-2">
                 {filtered.map((t) => {
                   const isPending = t.id === pendingId;
                   const isRenaming = renaming === t.id;
-                  const dColor = domainColor[t.domain];
                   return (
-                    <div
+                    <li
                       key={t.id}
                       role="button"
                       onClick={() => !isRenaming && setPendingId(t.id)}
                       className={cn(
-                        "group relative cursor-pointer rounded-xl border bg-card p-3 transition-all",
+                        "group relative cursor-pointer rounded-xl border bg-card px-4 py-3 transition-all",
                         isPending
-                          ? "border-primary shadow-[0_4px_14px_-4px_rgba(99,102,241,0.35)] ring-2 ring-primary/30"
-                          : "border-border/60 hover:border-primary/40 hover:shadow-sm",
+                          ? "border-primary ring-2 ring-primary/25"
+                          : "border-border/60 hover:border-primary/40 hover:bg-muted/30",
                       )}
                     >
-                      {/* Header row: 32x32 icon top-left */}
-                      <div className="mb-2 flex items-start gap-2">
-                        <div
-                          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md"
-                          style={{
-                            background: `color-mix(in oklab, ${dColor} 14%, transparent)`,
-                          }}
-                        >
-                          <FileText className="h-4 w-4" style={{ color: dColor }} />
+                      <div className="flex items-center gap-3">
+                        {/* Left: name + meta */}
+                        <div className="min-w-0 flex-1">
+                          {isRenaming ? (
+                            <div className="flex items-center gap-1">
+                              <input
+                                autoFocus
+                                value={draftName}
+                                onClick={(e) => e.stopPropagation()}
+                                onChange={(e) => setDraftName(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter") commitRename();
+                                  if (e.key === "Escape") setRenaming(null);
+                                }}
+                                className="h-7 w-full max-w-[260px] rounded border border-input bg-background pl-2 pr-1 text-[13px] focus:border-primary focus:outline-none"
+                              />
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  commitRename();
+                                }}
+                                className="text-primary"
+                              >
+                                <Check className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="truncate text-[13.5px] font-medium text-foreground" title={t.name}>
+                              {t.name}
+                            </div>
+                          )}
+                          <div className="mt-1 flex items-center gap-2 text-[11.5px] text-muted-foreground">
+                            <span>{t.domain}</span>
+                            <span className="text-border">·</span>
+                            <span>{t.motorType}</span>
+                            <span className="text-border">·</span>
+                            <span className="tabular-nums">创建时间 {formatDate(t.createdAt)}</span>
+                          </div>
+                        </div>
+
+                        {/* Right: status + actions */}
+                        <div className="flex shrink-0 items-center gap-2">
+                          {t.isSystem ? (
+                            <span className="rounded-md border border-border/70 bg-muted px-2 py-0.5 text-[10.5px] text-muted-foreground">
+                              系统
+                            </span>
+                          ) : (
+                            <span className="rounded-md border border-primary/30 bg-primary-soft px-2 py-0.5 text-[10.5px] text-primary">
+                              自建
+                            </span>
+                          )}
+                          {isPending && (
+                            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                              <Check className="h-3 w-3" strokeWidth={3} />
+                            </span>
+                          )}
+                          {!t.isSystem && !isRenaming && (
+                            <div className="flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  startRename(t.id, t.name);
+                                }}
+                                className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-primary"
+                                title="重命名"
+                              >
+                                <Pencil className="h-3.5 w-3.5" />
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setConfirmDel(t.id);
+                                }}
+                                className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-destructive"
+                                title="删除"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+                          )}
                         </div>
                       </div>
-
-                      {/* Name */}
-                      {isRenaming ? (
-                        <div className="flex items-center gap-1">
-                          <input
-                            autoFocus
-                            value={draftName}
-                            onClick={(e) => e.stopPropagation()}
-                            onChange={(e) => setDraftName(e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter") commitRename();
-                              if (e.key === "Escape") setRenaming(null);
-                            }}
-                            className="h-6 w-full rounded border border-input bg-background pl-1.5 pr-1 text-[12px] focus:border-primary focus:outline-none"
-                          />
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              commitRename();
-                            }}
-                            className="text-primary"
-                          >
-                            <Check className="h-3 w-3" />
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="truncate text-[12.5px] font-medium text-foreground" title={t.name}>
-                          {t.name}
-                        </div>
-                      )}
-
-                      {/* Tags */}
-                      <div className="mt-1.5 flex flex-wrap items-center gap-1">
-                        <span
-                          className="rounded px-1.5 py-0.5 text-[10px] font-medium"
-                          style={{
-                            background: `color-mix(in oklab, ${dColor} 14%, transparent)`,
-                            color: dColor,
-                          }}
-                        >
-                          {t.domain}
-                        </span>
-                        <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
-                          {t.motorType}
-                        </span>
-                        {t.isSystem && (
-                          <span className="rounded bg-primary/12 px-1.5 py-0.5 text-[10px] text-primary">系统</span>
-                        )}
-                      </div>
-
-                      {/* Actions on hover */}
-                      {!t.isSystem && !isRenaming && (
-                        <div className="absolute right-1.5 top-1.5 flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              startRename(t.id, t.name);
-                            }}
-                            className="flex h-6 w-6 items-center justify-center rounded bg-card/95 text-muted-foreground shadow-sm hover:text-primary"
-                            title="重命名"
-                          >
-                            <Pencil className="h-3 w-3" />
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setConfirmDel(t.id);
-                            }}
-                            className="flex h-6 w-6 items-center justify-center rounded bg-card/95 text-muted-foreground shadow-sm hover:text-destructive"
-                            title="删除"
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </button>
-                        </div>
-                      )}
-
-                      {/* Selected indicator */}
-                      {isPending && (
-                        <span className="absolute right-2 top-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground shadow">
-                          <Check className="h-3 w-3" strokeWidth={3} />
-                        </span>
-                      )}
-                    </div>
+                    </li>
                   );
                 })}
-              </div>
+              </ul>
             )}
           </div>
 

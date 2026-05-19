@@ -1,12 +1,12 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { Pencil, Trash2, FileText, Check, X, LayoutGrid, Search, AlertTriangle, GripVertical } from "lucide-react";
+import { Pencil, Trash2, Check, X, LayoutGrid, Search, AlertTriangle, GripVertical } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useTemplates } from "./templates/store";
 import { DOMAINS } from "./templates/types";
 import type { Domain } from "./templates/types";
 
-const domainColor: Record<Domain, string> = {
+const _unusedDomainColor: Record<Domain, string> = {
   通用: "oklch(0.7 0.04 260)",
   工业驱动: "oklch(0.62 0.18 230)",
   新能源汽车: "oklch(0.62 0.22 295)",

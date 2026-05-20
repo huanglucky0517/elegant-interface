@@ -32,12 +32,12 @@ export function AnalysisFlow() {
   const { active, activeModule, setActiveModule, saveAsTemplate } = useTemplates();
   const [saveOpen, setSaveOpen] = useState(false);
   const [saveName, setSaveName] = useState("");
-  const [saveDomain, setSaveDomain] = useState<Domain>("通用");
+  const [saveDomain, setSaveDomain] = useState<Domain>("其他");
   const [saveMotor, setSaveMotor] = useState<MotorType>("永磁同步");
 
   const openSave = () => {
     setSaveName(`${active.name} 副本`);
-    setSaveDomain("通用");
+    setSaveDomain("其他");
     setSaveMotor("永磁同步");
     setSaveOpen(true);
   };

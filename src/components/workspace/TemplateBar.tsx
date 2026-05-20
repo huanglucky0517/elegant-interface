@@ -274,20 +274,26 @@ export function TemplateBar() {
                     const isPending = t.id === pendingId;
                     const isRenaming = renaming === t.id;
                     const editable = t.ownership === "personal";
-                    const isShared = t.ownership === "system" || t.ownership === "enterprise";
+                    const isSystem = t.ownership === "system";
+                    const isEnterprise = t.ownership === "enterprise";
+                    const cardBg = isSystem
+                      ? "#F9FAFE"
+                      : isEnterprise
+                        ? "#F5F5F5"
+                        : undefined;
                     return (
                       <li
                         key={t.id}
                         role="button"
                         onClick={() => !isRenaming && setPendingId(t.id)}
-                        style={isShared ? { backgroundColor: "#BFBFBF" } : undefined}
+                        style={cardBg ? { backgroundColor: cardBg } : undefined}
                         className={cn(
                           "group relative cursor-pointer rounded-xl border px-4 py-3 transition-all",
-                          !isShared && "bg-card",
+                          !cardBg && "bg-card",
                           isPending
                             ? "border-primary ring-2 ring-primary/25"
                             : "border-border/60 hover:border-primary/40",
-                          !isShared && !isPending && "hover:bg-muted/30",
+                          !cardBg && !isPending && "hover:bg-muted/30",
                         )}
                       >
                         <div className="flex items-start gap-3">
@@ -310,51 +316,47 @@ export function TemplateBar() {
                                     e.stopPropagation();
                                     commitRename();
                                   }}
-                                  className={isShared ? "text-foreground" : "text-primary"}
+                                  className="text-primary"
                                 >
                                   <Check className="h-3.5 w-3.5" />
                                 </button>
                               </div>
                             ) : (
-                              <div
-                                className={cn(
-                                  "text-[13.5px] font-medium leading-snug break-words",
-                                  isShared ? "text-foreground" : "text-foreground",
+                              <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                                <span
+                                  className="text-[13.5px] font-medium leading-snug text-foreground break-words"
+                                  title={t.name}
+                                >
+                                  {t.name}
+                                </span>
+                                {isSystem && (
+                                  <span
+                                    className="rounded-md px-1.5 py-0.5 text-[10.5px] font-medium"
+                                    style={{ backgroundColor: "#EDE7FB", color: "#5B21B6" }}
+                                  >
+                                    系统
+                                  </span>
                                 )}
-                                title={t.name}
-                              >
-                                {t.name}
+                                {isEnterprise && (
+                                  <span
+                                    className="rounded-md px-1.5 py-0.5 text-[10.5px] font-medium"
+                                    style={{ backgroundColor: "#FFE8D1", color: "#C2410C" }}
+                                  >
+                                    企业
+                                  </span>
+                                )}
                               </div>
                             )}
                             {/* Tags */}
                             <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-                              <span
-                                className={cn(
-                                  "rounded-md border px-1.5 py-0.5 text-[10.5px]",
-                                  isShared
-                                    ? "border-foreground/20 bg-white/60 text-foreground/80"
-                                    : "border-border/70 bg-muted/60 text-muted-foreground",
-                                )}
-                              >
+                              <span className="rounded-md border border-border/70 bg-background/70 px-1.5 py-0.5 text-[10.5px] text-muted-foreground">
                                 {t.motorType}
                               </span>
-                              <span
-                                className={cn(
-                                  "rounded-md border px-1.5 py-0.5 text-[10.5px]",
-                                  isShared
-                                    ? "border-foreground/20 bg-white/60 text-foreground/80"
-                                    : "border-border/70 bg-muted/60 text-muted-foreground",
-                                )}
-                              >
+                              <span className="rounded-md border border-border/70 bg-background/70 px-1.5 py-0.5 text-[10.5px] text-muted-foreground">
                                 {t.domain}
                               </span>
                             </div>
-                            <div
-                              className={cn(
-                                "mt-1.5 text-[11.5px] tabular-nums",
-                                isShared ? "text-foreground/70" : "text-muted-foreground",
-                              )}
-                            >
+                            <div className="mt-1.5 text-[11.5px] tabular-nums text-muted-foreground">
                               {formatDate(t.createdAt)}
                             </div>
                           </div>

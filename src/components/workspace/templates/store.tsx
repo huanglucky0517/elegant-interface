@@ -38,6 +38,7 @@ const makeWorking = (src: Template): Template => ({
   id: "__working__",
   name: "当前方案",
   isSystem: false,
+  ownership: "personal",
 });
 
 export function TemplateProvider({ children }: { children: ReactNode }) {

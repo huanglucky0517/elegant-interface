@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useTemplates } from "./templates/store";
 import { DOMAINS } from "./templates/types";
-import type { Domain, Ownership } from "./templates/types";
+import type { Domain } from "./templates/types";
 
 const DEFAULT_W = 760;
 const DEFAULT_H = 560;

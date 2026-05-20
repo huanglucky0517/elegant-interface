@@ -4,9 +4,9 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useTemplates } from "./templates/store";
 import { DOMAINS } from "./templates/types";
-import type { Domain } from "./templates/types";
+import type { Domain, Ownership } from "./templates/types";
 
-const POPUP_W = 600;
+const POPUP_W = 760;
 const POPUP_H = 560;
 
 const formatDate = (ts?: number) => {
@@ -15,6 +15,16 @@ const formatDate = (ts?: number) => {
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 };
+
+const ownershipLabel = (o: Ownership) =>
+  o === "system" ? "系统" : o === "enterprise" ? "企业" : "个人";
+
+const ownershipClass = (o: Ownership) =>
+  o === "system"
+    ? "border-border/70 bg-muted text-muted-foreground"
+    : o === "enterprise"
+      ? "border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400"
+      : "border-primary/30 bg-primary-soft text-primary";
 
 export function TemplateBar() {
   const { templates, appliedId, applyTemplate, rename, remove } = useTemplates();
@@ -109,6 +119,18 @@ export function TemplateBar() {
     setOpen(false);
   };
 
+  // Count per domain across all templates (ignoring search)
+  const domainCounts = useMemo(() => {
+    const m = new Map<Domain, number>();
+    templates.forEach((t) => m.set(t.domain, (m.get(t.domain) ?? 0) + 1));
+    return m;
+  }, [templates]);
+
+  const visibleDomains = useMemo(
+    () => DOMAINS.filter((d) => (domainCounts.get(d) ?? 0) > 0),
+    [domainCounts],
+  );
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return templates
@@ -159,9 +181,6 @@ export function TemplateBar() {
               <GripVertical className="h-3.5 w-3.5 text-muted-foreground/60" />
               <LayoutGrid className="h-4 w-4 text-primary" />
               <h4 className="text-[14px] font-semibold text-foreground">模板库</h4>
-              <span className="rounded-full bg-muted px-2 py-0.5 text-[10.5px] tabular-nums text-muted-foreground">
-                {templates.length}
-              </span>
             </div>
             <button
               onClick={() => setOpen(false)}
@@ -185,106 +204,124 @@ export function TemplateBar() {
             </div>
           </div>
 
-          {/* Domain tabs */}
-          <div className="flex items-center gap-1 overflow-x-auto px-4 py-2.5">
-            {(["全部", ...DOMAINS] as const).map((d) => {
-              const isOn = domainFilter === d;
-              return (
-                <button
-                  key={d}
-                  onClick={() => setDomainFilter(d)}
-                  className={cn(
-                    "shrink-0 rounded-full px-2.5 py-1 text-[11.5px] font-medium transition-colors",
-                    isOn ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/70",
-                  )}
-                >
-                  {d}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Single-column list */}
-          <div className="max-h-[360px] overflow-auto px-4 pb-3">
-            {filtered.length === 0 ? (
-              <div className="flex h-24 items-center justify-center text-[12px] text-muted-foreground">
-                未找到匹配模板
-              </div>
-            ) : (
-              <ul className="flex flex-col gap-2">
-                {filtered.map((t) => {
-                  const isPending = t.id === pendingId;
-                  const isRenaming = renaming === t.id;
+          {/* Body: sidebar + list */}
+          <div className="flex gap-3 px-4 pt-3 pb-3">
+            {/* Left sidebar */}
+            <nav className="w-[148px] shrink-0 max-h-[380px] overflow-auto pr-1">
+              <ul className="flex flex-col gap-0.5">
+                {(["全部", ...visibleDomains] as const).map((d) => {
+                  const isOn = domainFilter === d;
+                  const count = d === "全部" ? templates.length : domainCounts.get(d) ?? 0;
                   return (
-                    <li
-                      key={t.id}
-                      role="button"
-                      onClick={() => !isRenaming && setPendingId(t.id)}
-                      className={cn(
-                        "group relative cursor-pointer rounded-xl border bg-card px-4 py-3 transition-all",
-                        isPending
-                          ? "border-primary ring-2 ring-primary/25"
-                          : "border-border/60 hover:border-primary/40 hover:bg-muted/30",
-                      )}
-                    >
-                      <div className="flex items-center gap-3">
-                        {/* Left: name + meta */}
-                        <div className="min-w-0 flex-1">
-                          {isRenaming ? (
-                            <div className="flex items-center gap-1">
-                              <input
-                                autoFocus
-                                value={draftName}
-                                onClick={(e) => e.stopPropagation()}
-                                onChange={(e) => setDraftName(e.target.value)}
-                                onKeyDown={(e) => {
-                                  if (e.key === "Enter") commitRename();
-                                  if (e.key === "Escape") setRenaming(null);
-                                }}
-                                className="h-7 w-full max-w-[260px] rounded border border-input bg-background pl-2 pr-1 text-[13px] focus:border-primary focus:outline-none"
-                              />
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  commitRename();
-                                }}
-                                className="text-primary"
-                              >
-                                <Check className="h-3.5 w-3.5" />
-                              </button>
-                            </div>
-                          ) : (
-                            <div className="truncate text-[13.5px] font-medium text-foreground" title={t.name}>
-                              {t.name}
-                            </div>
+                    <li key={d}>
+                      <button
+                        onClick={() => setDomainFilter(d)}
+                        className={cn(
+                          "flex w-full items-center justify-between rounded-md px-2.5 py-1.5 text-[12.5px] transition-colors",
+                          isOn
+                            ? "bg-primary/10 font-medium text-primary"
+                            : "text-foreground/80 hover:bg-muted",
+                        )}
+                      >
+                        <span className="truncate">{d}</span>
+                        <span
+                          className={cn(
+                            "ml-2 shrink-0 tabular-nums text-[11px]",
+                            isOn ? "text-primary/70" : "text-muted-foreground",
                           )}
-                          <div className="mt-1 flex items-center gap-2 text-[11.5px] text-muted-foreground">
-                            <span>{t.domain}</span>
-                            <span className="text-border">·</span>
-                            <span>{t.motorType}</span>
-                            <span className="text-border">·</span>
-                            <span className="tabular-nums">创建时间 {formatDate(t.createdAt)}</span>
-                          </div>
-                        </div>
+                        >
+                          {count}
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </nav>
 
-                        {/* Right: status + actions */}
-                        <div className="flex shrink-0 items-center gap-2">
-                          {t.isSystem ? (
-                            <span className="rounded-md border border-border/70 bg-muted px-2 py-0.5 text-[10.5px] text-muted-foreground">
-                              系统
-                            </span>
-                          ) : (
-                            <span className="rounded-md border border-primary/30 bg-primary-soft px-2 py-0.5 text-[10.5px] text-primary">
-                              自建
-                            </span>
-                          )}
-                          {isPending && (
-                            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground">
-                              <Check className="h-3 w-3" strokeWidth={3} />
-                            </span>
-                          )}
-                          {!t.isSystem && !isRenaming && (
-                            <div className="flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+            {/* Right: cards */}
+            <div className="min-w-0 flex-1 max-h-[380px] overflow-auto pr-1">
+              {filtered.length === 0 ? (
+                <div className="flex h-24 items-center justify-center text-[12px] text-muted-foreground">
+                  未找到匹配模板
+                </div>
+              ) : (
+                <ul className="flex flex-col gap-2">
+                  {filtered.map((t) => {
+                    const isPending = t.id === pendingId;
+                    const isRenaming = renaming === t.id;
+                    const editable = t.ownership === "personal";
+                    return (
+                      <li
+                        key={t.id}
+                        role="button"
+                        onClick={() => !isRenaming && setPendingId(t.id)}
+                        className={cn(
+                          "group relative cursor-pointer rounded-xl border bg-card px-4 py-3 transition-all",
+                          isPending
+                            ? "border-primary ring-2 ring-primary/25"
+                            : "border-border/60 hover:border-primary/40 hover:bg-muted/30",
+                        )}
+                      >
+                        <div className="flex items-start gap-3">
+                          {/* Left: name + tags + meta */}
+                          <div className="min-w-0 flex-1">
+                            {isRenaming ? (
+                              <div className="flex items-center gap-1">
+                                <input
+                                  autoFocus
+                                  value={draftName}
+                                  onClick={(e) => e.stopPropagation()}
+                                  onChange={(e) => setDraftName(e.target.value)}
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter") commitRename();
+                                    if (e.key === "Escape") setRenaming(null);
+                                  }}
+                                  className="h-7 w-full max-w-[320px] rounded border border-input bg-background pl-2 pr-1 text-[13px] focus:border-primary focus:outline-none"
+                                />
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    commitRename();
+                                  }}
+                                  className="text-primary"
+                                >
+                                  <Check className="h-3.5 w-3.5" />
+                                </button>
+                              </div>
+                            ) : (
+                              <div
+                                className="text-[13.5px] font-medium leading-snug text-foreground break-words"
+                                title={t.name}
+                              >
+                                {t.name}
+                              </div>
+                            )}
+                            {/* Tags row: ownership + motor type */}
+                            <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                              <span
+                                className={cn(
+                                  "rounded-md border px-1.5 py-0.5 text-[10.5px]",
+                                  ownershipClass(t.ownership),
+                                )}
+                              >
+                                {ownershipLabel(t.ownership)}
+                              </span>
+                              <span className="rounded-md border border-border/70 bg-muted/60 px-1.5 py-0.5 text-[10.5px] text-muted-foreground">
+                                {t.motorType}
+                              </span>
+                              <span className="rounded-md border border-border/70 bg-muted/60 px-1.5 py-0.5 text-[10.5px] text-muted-foreground">
+                                {t.domain}
+                              </span>
+                            </div>
+                            <div className="mt-1.5 text-[11.5px] text-muted-foreground tabular-nums">
+                              创建时间 {formatDate(t.createdAt)}
+                            </div>
+                          </div>
+
+                          {/* Right: hover actions for personal templates only */}
+                          {editable && !isRenaming && (
+                            <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
@@ -308,12 +345,12 @@ export function TemplateBar() {
                             </div>
                           )}
                         </div>
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </div>
           </div>
 
           {/* Footer */}

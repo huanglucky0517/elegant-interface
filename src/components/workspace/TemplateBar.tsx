@@ -6,25 +6,20 @@ import { useTemplates } from "./templates/store";
 import { DOMAINS } from "./templates/types";
 import type { Domain, Ownership } from "./templates/types";
 
-const POPUP_W = 760;
-const POPUP_H = 560;
+const DEFAULT_W = 760;
+const DEFAULT_H = 560;
+const MIN_W = 520;
+const MIN_H = 420;
 
 const formatDate = (ts?: number) => {
-  if (!ts) return "系统内置";
+  if (!ts) return "—";
   const d = new Date(ts);
   const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  return `${d.getFullYear()}/${pad(d.getMonth() + 1)}/${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
 };
 
 const ownershipLabel = (o: Ownership) =>
   o === "system" ? "系统" : o === "enterprise" ? "企业" : "个人";
-
-const ownershipClass = (o: Ownership) =>
-  o === "system"
-    ? "border-border/70 bg-muted text-muted-foreground"
-    : o === "enterprise"
-      ? "border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400"
-      : "border-primary/30 bg-primary-soft text-primary";
 
 export function TemplateBar() {
   const { templates, appliedId, applyTemplate, rename, remove } = useTemplates();
@@ -36,22 +31,25 @@ export function TemplateBar() {
   const [domainFilter, setDomainFilter] = useState<Domain | "全部">("全部");
   const [confirmDel, setConfirmDel] = useState<string | null>(null);
   const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
+  const [size, setSize] = useState<{ w: number; h: number }>({ w: DEFAULT_W, h: DEFAULT_H });
   const popRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const dragRef = useRef<{ dx: number; dy: number } | null>(null);
+  const resizeRef = useRef<{ startX: number; startY: number; startW: number; startH: number } | null>(null);
 
   useLayoutEffect(() => {
     if (!open) return;
     const r = triggerRef.current?.getBoundingClientRect();
     if (!r) return;
     const margin = 8;
-    const w = popRef.current?.offsetWidth ?? POPUP_W;
-    const h = popRef.current?.offsetHeight ?? POPUP_H;
+    const w = size.w;
+    const h = size.h;
     let x = r.left;
     let y = r.bottom + 6;
     x = Math.min(Math.max(margin, x), window.innerWidth - w - margin);
     y = Math.min(Math.max(margin, y), window.innerHeight - h - margin);
     setPos({ x, y });
+     
   }, [open]);
 
   useEffect(() => {
@@ -67,18 +65,29 @@ export function TemplateBar() {
 
   useEffect(() => {
     const onMove = (e: MouseEvent) => {
-      if (!dragRef.current || !popRef.current) return;
-      const w = popRef.current.offsetWidth;
-      const h = popRef.current.offsetHeight;
-      const margin = 4;
-      let x = e.clientX - dragRef.current.dx;
-      let y = e.clientY - dragRef.current.dy;
-      x = Math.min(Math.max(margin, x), window.innerWidth - w - margin);
-      y = Math.min(Math.max(margin, y), window.innerHeight - h - margin);
-      setPos({ x, y });
+      if (dragRef.current && popRef.current) {
+        const w = popRef.current.offsetWidth;
+        const h = popRef.current.offsetHeight;
+        const margin = 4;
+        let x = e.clientX - dragRef.current.dx;
+        let y = e.clientY - dragRef.current.dy;
+        x = Math.min(Math.max(margin, x), window.innerWidth - w - margin);
+        y = Math.min(Math.max(margin, y), window.innerHeight - h - margin);
+        setPos({ x, y });
+      }
+      if (resizeRef.current) {
+        const margin = 4;
+        const { startX, startY, startW, startH } = resizeRef.current;
+        const maxW = window.innerWidth - (pos?.x ?? margin) - margin;
+        const maxH = window.innerHeight - (pos?.y ?? margin) - margin;
+        const w = Math.min(Math.max(MIN_W, startW + (e.clientX - startX)), maxW);
+        const h = Math.min(Math.max(MIN_H, startH + (e.clientY - startY)), maxH);
+        setSize({ w, h });
+      }
     };
     const onUp = () => {
       dragRef.current = null;
+      resizeRef.current = null;
       document.body.style.userSelect = "";
     };
     window.addEventListener("mousemove", onMove);
@@ -87,12 +96,18 @@ export function TemplateBar() {
       window.removeEventListener("mousemove", onMove);
       window.removeEventListener("mouseup", onUp);
     };
-  }, []);
+  }, [pos]);
 
   const startDrag = (e: React.MouseEvent) => {
     if (!popRef.current) return;
     const r = popRef.current.getBoundingClientRect();
     dragRef.current = { dx: e.clientX - r.left, dy: e.clientY - r.top };
+    document.body.style.userSelect = "none";
+  };
+
+  const startResize = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    resizeRef.current = { startX: e.clientX, startY: e.clientY, startW: size.w, startH: size.h };
     document.body.style.userSelect = "none";
   };
 
@@ -119,7 +134,6 @@ export function TemplateBar() {
     setOpen(false);
   };
 
-  // Count per domain across all templates (ignoring search)
   const domainCounts = useMemo(() => {
     const m = new Map<Domain, number>();
     templates.forEach((t) => m.set(t.domain, (m.get(t.domain) ?? 0) + 1));
@@ -167,10 +181,11 @@ export function TemplateBar() {
             position: "fixed",
             left: pos?.x ?? -9999,
             top: pos?.y ?? -9999,
-            width: POPUP_W,
+            width: size.w,
+            height: size.h,
             visibility: pos ? "visible" : "hidden",
           }}
-          className="z-50 rounded-2xl border border-border/60 bg-popover p-0 shadow-[0_12px_40px_-8px_rgba(0,0,0,0.18)] ring-1 ring-black/5"
+          className="z-50 flex flex-col rounded-2xl border border-border/60 bg-popover p-0 shadow-[0_12px_40px_-8px_rgba(0,0,0,0.18)] ring-1 ring-black/5"
         >
           {/* Header */}
           <div
@@ -199,15 +214,25 @@ export function TemplateBar() {
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="搜索模板名称 / 电机类型"
-                className="h-8 w-full rounded-full border border-border bg-background pl-8 pr-3 text-[12.5px] focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/15"
+                className="h-8 w-full rounded-full border border-border bg-background pl-8 pr-8 text-[12.5px] focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/15"
               />
+              {query && (
+                <button
+                  type="button"
+                  onClick={() => setQuery("")}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 flex h-5 w-5 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground"
+                  title="清除"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              )}
             </div>
           </div>
 
           {/* Body: sidebar + list */}
-          <div className="flex gap-3 px-4 pt-3 pb-3">
+          <div className="flex min-h-0 flex-1 gap-3 px-4 pt-3 pb-3">
             {/* Left sidebar */}
-            <nav className="w-[148px] shrink-0 max-h-[380px] overflow-auto pr-1">
+            <nav className="w-[148px] shrink-0 overflow-auto pr-1">
               <ul className="flex flex-col gap-0.5">
                 {(["全部", ...visibleDomains] as const).map((d) => {
                   const isOn = domainFilter === d;
@@ -240,7 +265,7 @@ export function TemplateBar() {
             </nav>
 
             {/* Right: cards */}
-            <div className="min-w-0 flex-1 max-h-[380px] overflow-auto pr-1">
+            <div className="min-w-0 flex-1 overflow-auto pr-1">
               {filtered.length === 0 ? (
                 <div className="flex h-24 items-center justify-center text-[12px] text-muted-foreground">
                   未找到匹配模板
@@ -251,20 +276,23 @@ export function TemplateBar() {
                     const isPending = t.id === pendingId;
                     const isRenaming = renaming === t.id;
                     const editable = t.ownership === "personal";
+                    const isShared = t.ownership === "system" || t.ownership === "enterprise";
                     return (
                       <li
                         key={t.id}
                         role="button"
                         onClick={() => !isRenaming && setPendingId(t.id)}
+                        style={isShared ? { backgroundColor: "#BFBFBF" } : undefined}
                         className={cn(
-                          "group relative cursor-pointer rounded-xl border bg-card px-4 py-3 transition-all",
+                          "group relative cursor-pointer rounded-xl border px-4 py-3 transition-all",
+                          !isShared && "bg-card",
                           isPending
                             ? "border-primary ring-2 ring-primary/25"
-                            : "border-border/60 hover:border-primary/40 hover:bg-muted/30",
+                            : "border-border/60 hover:border-primary/40",
+                          !isShared && !isPending && "hover:bg-muted/30",
                         )}
                       >
                         <div className="flex items-start gap-3">
-                          {/* Left: name + tags + meta */}
                           <div className="min-w-0 flex-1">
                             {isRenaming ? (
                               <div className="flex items-center gap-1">
@@ -284,42 +312,55 @@ export function TemplateBar() {
                                     e.stopPropagation();
                                     commitRename();
                                   }}
-                                  className="text-primary"
+                                  className={isShared ? "text-foreground" : "text-primary"}
                                 >
                                   <Check className="h-3.5 w-3.5" />
                                 </button>
                               </div>
                             ) : (
                               <div
-                                className="text-[13.5px] font-medium leading-snug text-foreground break-words"
+                                className={cn(
+                                  "text-[13.5px] font-medium leading-snug break-words",
+                                  isShared ? "text-foreground" : "text-foreground",
+                                )}
                                 title={t.name}
                               >
                                 {t.name}
                               </div>
                             )}
-                            {/* Tags row: ownership + motor type */}
+                            {/* Tags */}
                             <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
                               <span
                                 className={cn(
                                   "rounded-md border px-1.5 py-0.5 text-[10.5px]",
-                                  ownershipClass(t.ownership),
+                                  isShared
+                                    ? "border-foreground/20 bg-white/60 text-foreground/80"
+                                    : "border-border/70 bg-muted/60 text-muted-foreground",
                                 )}
                               >
-                                {ownershipLabel(t.ownership)}
-                              </span>
-                              <span className="rounded-md border border-border/70 bg-muted/60 px-1.5 py-0.5 text-[10.5px] text-muted-foreground">
                                 {t.motorType}
                               </span>
-                              <span className="rounded-md border border-border/70 bg-muted/60 px-1.5 py-0.5 text-[10.5px] text-muted-foreground">
+                              <span
+                                className={cn(
+                                  "rounded-md border px-1.5 py-0.5 text-[10.5px]",
+                                  isShared
+                                    ? "border-foreground/20 bg-white/60 text-foreground/80"
+                                    : "border-border/70 bg-muted/60 text-muted-foreground",
+                                )}
+                              >
                                 {t.domain}
                               </span>
                             </div>
-                            <div className="mt-1.5 text-[11.5px] text-muted-foreground tabular-nums">
-                              创建时间 {formatDate(t.createdAt)}
+                            <div
+                              className={cn(
+                                "mt-1.5 text-[11.5px] tabular-nums",
+                                isShared ? "text-foreground/70" : "text-muted-foreground",
+                              )}
+                            >
+                              {formatDate(t.createdAt)}
                             </div>
                           </div>
 
-                          {/* Right: hover actions for personal templates only */}
                           {editable && !isRenaming && (
                             <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
                               <button
@@ -369,10 +410,22 @@ export function TemplateBar() {
               应用
             </button>
           </div>
+
+          {/* Resize handle */}
+          <div
+            onMouseDown={startResize}
+            className="absolute bottom-0 right-0 h-4 w-4 cursor-nwse-resize"
+            title="拖拽调整大小"
+            style={{
+              background:
+                "linear-gradient(135deg, transparent 0 50%, hsl(var(--muted-foreground) / 0.5) 50% 60%, transparent 60% 70%, hsl(var(--muted-foreground) / 0.5) 70% 80%, transparent 80%)",
+              borderBottomRightRadius: "1rem",
+            }}
+          />
         </div>
       )}
 
-      {/* Delete confirm dialog */}
+      {/* Delete confirm */}
       {confirmDel && (
         <div
           className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40"

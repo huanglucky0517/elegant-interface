@@ -84,6 +84,7 @@ export function TemplateProvider({ children }: { children: ReactNode }) {
         domain,
         motorType,
         isSystem: false,
+        ownership: "personal",
         usageCount: 0,
         createdAt: Date.now(),
       };

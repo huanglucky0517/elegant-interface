@@ -96,13 +96,13 @@ export function TemplateProvider({ children }: { children: ReactNode }) {
   );
 
   const rename = useCallback((id: string, name: string) => {
-    setTemplates((p) => p.map((t) => (t.id === id && !t.isSystem ? { ...t, name } : t)));
+    setTemplates((p) => p.map((t) => (t.id === id && t.ownership === "personal" ? { ...t, name } : t)));
   }, []);
 
   const remove = useCallback((id: string) => {
     setTemplates((p) => {
       const tpl = p.find((t) => t.id === id);
-      if (!tpl || tpl.isSystem) return p;
+      if (!tpl || tpl.ownership !== "personal") return p;
       return p.filter((t) => t.id !== id);
     });
     setAppliedId((cur) => (cur === id ? null : cur));

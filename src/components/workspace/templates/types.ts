@@ -27,16 +27,46 @@ export interface ModuleData {
   cards: Card[];
 }
 
-export type Domain = "工业驱动" | "新能源汽车" | "家用电器" | "航空航天" | "通用";
+export type Domain =
+  | "电动汽车"
+  | "伺服传动"
+  | "水泵电机"
+  | "机器人"
+  | "减速机电机"
+  | "空压机"
+  | "工业风扇"
+  | "电动工具"
+  | "无人机"
+  | "机械手"
+  | "电动摩托车"
+  | "其他";
+
 export type MotorType = "永磁同步" | "异步" | "直流有刷" | "无刷直流" | "步进";
 
-export const DOMAINS: Domain[] = ["工业驱动", "新能源汽车", "家用电器", "航空航天", "通用"];
+export type Ownership = "system" | "enterprise" | "personal";
+
+export const DOMAINS: Domain[] = [
+  "电动汽车",
+  "伺服传动",
+  "水泵电机",
+  "机器人",
+  "减速机电机",
+  "空压机",
+  "工业风扇",
+  "电动工具",
+  "无人机",
+  "机械手",
+  "电动摩托车",
+  "其他",
+];
 export const MOTOR_TYPES: MotorType[] = ["永磁同步", "异步", "直流有刷", "无刷直流", "步进"];
 
 export interface Template {
   id: string;
   name: string;
+  /** Deprecated: use `ownership` instead. Kept for backwards compatibility. */
   isSystem: boolean;
+  ownership: Ownership;
   domain: Domain;
   motorType: MotorType;
   modules: Record<ModuleKey, ModuleData>;

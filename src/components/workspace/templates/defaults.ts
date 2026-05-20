@@ -198,7 +198,8 @@ export const SYSTEM_TEMPLATE: Template = {
   id: "system-default",
   name: "系统默认 · 综合方案",
   isSystem: true,
-  domain: "通用",
+  ownership: "system",
+  domain: "其他",
   motorType: "永磁同步",
   modules: {
     em: mod(emCards),
@@ -220,9 +221,10 @@ const lightenNvh = nvhCards.map((card) => ({ ...card, enabled: false, advancedOp
 
 export const SYSTEM_LIGHT: Template = {
   id: "system-light",
-  name: "系统模板 · 快速评估",
+  name: "伺服快速评估模板",
   isSystem: true,
-  domain: "工业驱动",
+  ownership: "system",
+  domain: "伺服传动",
   motorType: "永磁同步",
   modules: {
     em: mod(lightenEm),
@@ -244,9 +246,10 @@ const evNvh = nvhCards.map((card) => ({ ...card, enabled: true, advancedOpen: fa
 
 export const SYSTEM_EV: Template = {
   id: "system-ev",
-  name: "新能源车驱动电机模板",
+  name: "电动汽车驱动电机模板",
   isSystem: true,
-  domain: "新能源汽车",
+  ownership: "system",
+  domain: "电动汽车",
   motorType: "永磁同步",
   modules: {
     em: mod(evEm),
@@ -256,7 +259,7 @@ export const SYSTEM_EV: Template = {
   },
 };
 
-// Appliance template: minimal
+// Appliance / fan template: minimal
 const apEm = emCards.map((card) => ({
   ...card,
   enabled: ["em-resistance", "em-static", "em-emf", "em-rated", "em-curve"].includes(card.id),
@@ -266,11 +269,12 @@ const apThermal = thermalCards.map((card, i) => ({ ...card, enabled: i < 2, adva
 const apStress = stressCards.map((card) => ({ ...card, enabled: false, advancedOpen: false }));
 const apNvh = nvhCards.map((card) => ({ ...card, enabled: true, advancedOpen: false }));
 
-export const SYSTEM_APPLIANCE: Template = {
-  id: "system-appliance",
-  name: "家电异步电机模板",
+export const SYSTEM_FAN: Template = {
+  id: "system-fan",
+  name: "工业风扇异步电机模板",
   isSystem: true,
-  domain: "家用电器",
+  ownership: "system",
+  domain: "工业风扇",
   motorType: "异步",
   modules: {
     em: mod(apEm),
@@ -280,4 +284,61 @@ export const SYSTEM_APPLIANCE: Template = {
   },
 };
 
-export const SYSTEM_TEMPLATES: Template[] = [SYSTEM_TEMPLATE, SYSTEM_LIGHT, SYSTEM_EV, SYSTEM_APPLIANCE];
+// Enterprise samples (not editable, marked with 企业 tag)
+export const ENT_PUMP: Template = {
+  id: "ent-pump",
+  name: "企业 · 水泵电机标准方案",
+  isSystem: false,
+  ownership: "enterprise",
+  domain: "水泵电机",
+  motorType: "永磁同步",
+  modules: {
+    em: mod(lightenEm),
+    thermal: mod(thermalCards.map((c) => ({ ...c, enabled: true }))),
+    stress: mod(stressCards),
+    nvh: mod(nvhCards.map((c) => ({ ...c, enabled: false }))),
+  },
+  createdAt: Date.now() - 1000 * 60 * 60 * 24 * 30,
+};
+
+export const ENT_ROBOT: Template = {
+  id: "ent-robot",
+  name: "企业 · 机器人关节电机模板",
+  isSystem: false,
+  ownership: "enterprise",
+  domain: "机器人",
+  motorType: "无刷直流",
+  modules: {
+    em: mod(evEm),
+    thermal: mod(thermalCards),
+    stress: mod(stressCards),
+    nvh: mod(nvhCards),
+  },
+  createdAt: Date.now() - 1000 * 60 * 60 * 24 * 15,
+};
+
+export const ENT_TOOL: Template = {
+  id: "ent-tool",
+  name: "企业 · 电动工具高速电机",
+  isSystem: false,
+  ownership: "enterprise",
+  domain: "电动工具",
+  motorType: "无刷直流",
+  modules: {
+    em: mod(lightenEm),
+    thermal: mod(lightenThermal),
+    stress: mod(stressCards.map((c) => ({ ...c, enabled: true }))),
+    nvh: mod(lightenNvh),
+  },
+  createdAt: Date.now() - 1000 * 60 * 60 * 24 * 7,
+};
+
+export const SYSTEM_TEMPLATES: Template[] = [
+  SYSTEM_TEMPLATE,
+  SYSTEM_LIGHT,
+  SYSTEM_EV,
+  SYSTEM_FAN,
+  ENT_PUMP,
+  ENT_ROBOT,
+  ENT_TOOL,
+];

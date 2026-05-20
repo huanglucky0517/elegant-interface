@@ -18,8 +18,6 @@ const formatDate = (ts?: number) => {
   return `${d.getFullYear()}/${pad(d.getMonth() + 1)}/${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
 };
 
-const ownershipLabel = (o: Ownership) =>
-  o === "system" ? "系统" : o === "enterprise" ? "企业" : "个人";
 
 export function TemplateBar() {
   const { templates, appliedId, applyTemplate, rename, remove } = useTemplates();

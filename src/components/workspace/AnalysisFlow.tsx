@@ -6,6 +6,7 @@ import { useTemplates } from "./templates/store";
 import { TemplateBar } from "./TemplateBar";
 import { DOMAINS, MOTOR_TYPES } from "./templates/types";
 import type { Domain, ModuleKey, MotorType } from "./templates/types";
+import { DesignFailedDialog } from "./DesignFailedDialog";
 
 interface FlowItem {
   key: ModuleKey;

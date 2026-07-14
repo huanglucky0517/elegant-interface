@@ -6,6 +6,7 @@ import { useTemplates } from "./templates/store";
 import { TemplateBar } from "./TemplateBar";
 import { DOMAINS, MOTOR_TYPES } from "./templates/types";
 import type { Domain, ModuleKey, MotorType } from "./templates/types";
+import { DesignFailedDialog } from "./DesignFailedDialog";
 
 interface FlowItem {
   key: ModuleKey;
@@ -34,6 +35,7 @@ export function AnalysisFlow() {
   const [saveName, setSaveName] = useState("");
   const [saveDomain, setSaveDomain] = useState<Domain>("其他");
   const [saveMotor, setSaveMotor] = useState<MotorType>("永磁同步");
+  const [failOpen, setFailOpen] = useState(false);
 
   const openSave = () => {
     setSaveName(`${active.name} 副本`);
@@ -136,9 +138,14 @@ export function AnalysisFlow() {
         </ul>
       </div>
 
-      <button className="mt-auto inline-flex h-11 items-center justify-center rounded-xl bg-[image:var(--gradient-primary)] text-[14px] font-semibold text-primary-foreground shadow-[var(--shadow-elegant)] transition-transform hover:scale-[1.01] active:scale-[0.99]">
+      <button
+        onClick={() => setFailOpen(true)}
+        className="mt-auto inline-flex h-11 items-center justify-center rounded-xl bg-[image:var(--gradient-primary)] text-[14px] font-semibold text-primary-foreground shadow-[var(--shadow-elegant)] transition-transform hover:scale-[1.01] active:scale-[0.99]"
+      >
         初始方案设计
       </button>
+
+      <DesignFailedDialog open={failOpen} onClose={() => setFailOpen(false)} />
 
       {saveOpen && (
         <div

@@ -35,6 +35,7 @@ export function AnalysisFlow() {
   const [saveName, setSaveName] = useState("");
   const [saveDomain, setSaveDomain] = useState<Domain>("其他");
   const [saveMotor, setSaveMotor] = useState<MotorType>("永磁同步");
+  const [failOpen, setFailOpen] = useState(false);
 
   const openSave = () => {
     setSaveName(`${active.name} 副本`);

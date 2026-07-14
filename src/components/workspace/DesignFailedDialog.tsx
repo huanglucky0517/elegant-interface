@@ -107,7 +107,7 @@ export function DesignFailedDialog({
       )
       .join("\n\n");
     navigator.clipboard.writeText(text).then(
-      () => toast.success("已复制全部错误日志"),
+      () => toast.success("已复制全部错误信息"),
       () => toast.error("复制失败"),
     );
   };

@@ -34,15 +34,21 @@ export function TopBar() {
       </div>
 
       <div className="ml-auto flex items-center gap-1">
-        {navRight.map((n) => (
-          <button
-            key={n.label}
-            className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[13px] text-foreground/80 transition-colors hover:bg-muted hover:text-primary"
-          >
-            {n.icon}
-            {n.label}
-          </button>
-        ))}
+        {navRight.map((n) => {
+          const className =
+            "inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[13px] text-foreground/80 transition-colors hover:bg-muted hover:text-primary";
+          return n.to ? (
+            <Link key={n.label} to={n.to} className={className} activeProps={{ className: "text-primary bg-muted" }}>
+              {n.icon}
+              {n.label}
+            </Link>
+          ) : (
+            <button key={n.label} className={className}>
+              {n.icon}
+              {n.label}
+            </button>
+          );
+        })}
         <span className="mx-2 h-5 w-px bg-border" />
         {stores.map((s) => (
           <button

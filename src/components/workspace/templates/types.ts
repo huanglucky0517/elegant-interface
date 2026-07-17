@@ -12,6 +12,8 @@ export interface Param {
   advanced?: boolean;
   options?: string[];
   width?: "sm" | "md";
+  /** Only visible when any of these sibling param keys is truthy. */
+  showIfAny?: string[];
 }
 
 export interface Card {

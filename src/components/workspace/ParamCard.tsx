@@ -11,8 +11,16 @@ interface ParamCardProps {
 
 export function ParamCard({ card }: ParamCardProps) {
   const { toggleCardEnabled, toggleCardAdvanced, updateParam } = useTemplates();
-  const basicParams = card.params.filter((p) => !p.advanced);
-  const advParams = card.params.filter((p) => p.advanced);
+  const isVisible = (p: Param) => {
+    if (!p.showIfAny || p.showIfAny.length === 0) return true;
+    return p.showIfAny.some((k) => {
+      const dep = card.params.find((q) => q.key === k);
+      return dep ? Boolean(dep.value) : false;
+    });
+  };
+  const visibleParams = card.params.filter(isVisible);
+  const basicParams = visibleParams.filter((p) => !p.advanced);
+  const advParams = visibleParams.filter((p) => p.advanced);
   const hasAdvanced = advParams.length > 0;
 
   // Checkbox group: among params of type "checkbox" in the card, at least one must remain selected.

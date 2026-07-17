@@ -1,11 +1,12 @@
 import { ChevronDown, HelpCircle, User } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 import { cn } from "@/lib/utils";
 
 export function TopBar() {
   const navRight = [
-    { label: "价格", icon: <span className="text-primary">◆</span> },
-    { label: "产品库" },
-    { label: "online模型" },
+    { label: "价格", icon: <span className="text-primary">◆</span>, to: undefined as string | undefined },
+    { label: "产品库", to: "/products" },
+    { label: "online模型", to: undefined },
   ];
   const stores = ["机壳库", "材料库"];
 

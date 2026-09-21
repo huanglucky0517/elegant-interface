@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
 import { TopBar } from "@/components/workspace/Chrome";
 import { DesignFailedDialog, type FailureItem } from "@/components/workspace/DesignFailedDialog";
 
-export const Route = createFileRoute("/products")({
+export const Route = createFileRoute("/products/")({
   head: () => ({
     meta: [
       { title: "产品库 — 数智工程师" },

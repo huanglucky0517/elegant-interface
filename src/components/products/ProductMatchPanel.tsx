@@ -51,8 +51,11 @@ export function ProductMatchPanel({
 
   const confirm = () => {
     const product = results.find((r) => r.id === picked) ?? null;
+    if (!product) return;
     onConfirm(product, activeConditions);
   };
+
+  const recordUnmatched = () => onConfirm(null, activeConditions);
 
   return (
     <div className="fixed inset-0 z-[60] flex justify-end bg-foreground/25 backdrop-blur-[1px]">
@@ -221,12 +224,22 @@ export function ProductMatchPanel({
           >
             <ChevronLeft className="h-3.5 w-3.5" /> 返回上一步
           </button>
-          <button
-            onClick={confirm}
-            className="inline-flex h-8 items-center rounded-md bg-[image:var(--gradient-primary)] px-4 text-[12.5px] font-semibold text-primary-foreground"
-          >
-            {picked ? "选为本次匹配结果" : "记录未匹配结果"}
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={recordUnmatched}
+              className="inline-flex h-8 items-center rounded-md border border-border px-3 text-[12.5px] text-muted-foreground hover:bg-muted hover:text-foreground"
+            >
+              记录未匹配结果
+            </button>
+            <button
+              onClick={confirm}
+              disabled={!picked}
+              title={picked ? undefined : "请先选择一个产品作为最终匹配方案"}
+              className="inline-flex h-8 items-center rounded-md bg-[image:var(--gradient-primary)] px-4 text-[12.5px] font-semibold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              选为最终匹配方案
+            </button>
+          </div>
         </footer>
       </section>
     </div>

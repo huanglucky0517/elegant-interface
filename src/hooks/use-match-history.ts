@@ -26,6 +26,8 @@ export interface MatchRecord {
   motorType: string;
   conditions: MatchCondition[];
   product: MatchedProduct | null;
+  /** 用户选定一个产品作为最终匹配方案时为 true */
+  isFinal?: boolean;
 }
 
 const KEY = "product-match-history";

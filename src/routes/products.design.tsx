@@ -199,8 +199,8 @@ function DesignPage() {
         onBack={() => setMatchOpen(false)}
         conditions={matchConditions}
         onConfirm={(product, used) => {
-          addRecord({ domain: domainLabel, motorType, conditions: used, product });
-          toast.success(product ? `已记录匹配结果：${product.name}` : "已记录：未匹配到结果");
+          addRecord({ domain: domainLabel, motorType, conditions: used, product, isFinal: !!product });
+          toast.success(product ? `已选定最终匹配方案并记录：${product.name}` : "已记录：未匹配到结果");
           setMatchOpen(false);
           setPanelOpen(false);
           navigate({ to: "/products" });

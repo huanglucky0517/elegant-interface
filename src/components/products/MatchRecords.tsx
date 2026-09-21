@@ -23,8 +23,13 @@ export function MatchRecords({
         <article key={r.id} className="rounded-xl border border-border bg-card p-4">
           <header className="flex items-start justify-between">
             <div>
-              <div className="text-[13.5px] font-semibold text-foreground">
+              <div className="flex items-center gap-2 text-[13.5px] font-semibold text-foreground">
                 {r.domain} · {r.motorType}
+                {r.isFinal && r.product && (
+                  <span className="rounded-full bg-primary-soft px-2 py-0.5 text-[11px] font-medium text-primary">
+                    最终匹配方案
+                  </span>
+                )}
               </div>
               <div className="mt-0.5 text-[11.5px] text-muted-foreground">匹配时间：{r.createdAt}</div>
             </div>

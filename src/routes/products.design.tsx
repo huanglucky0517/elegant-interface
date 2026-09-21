@@ -203,7 +203,7 @@ function DesignPage() {
           toast.success(product ? `已记录匹配结果：${product.name}` : "已记录：未匹配到结果");
           setMatchOpen(false);
           setPanelOpen(false);
-          navigate({ to: "/products", search: { tab: "match" } as never });
+          navigate({ to: "/products" });
         }}
       />
     </div>

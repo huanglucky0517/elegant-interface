@@ -13,6 +13,8 @@ import {
 import { cn } from "@/lib/utils";
 import { TopBar } from "@/components/workspace/Chrome";
 import { DesignFailedDialog, type FailureItem } from "@/components/workspace/DesignFailedDialog";
+import { useMatchHistory } from "@/hooks/use-match-history";
+import { MatchRecords } from "@/components/products/MatchRecords";
 
 export const Route = createFileRoute("/products/")({
   head: () => ({
@@ -24,7 +26,7 @@ export const Route = createFileRoute("/products/")({
   component: ProductsPage,
 });
 
-type Status = "success" | "failed" | "designing" | "draft";
+type Status = "success" | "failed" | "designing" | "draft" | "match";
 
 interface Product {
   id: string;
@@ -43,6 +45,7 @@ const CATEGORIES: { key: Status; label: string; count: number }[] = [
   { key: "failed", label: "设计失败", count: 10 },
   { key: "designing", label: "设计中", count: 0 },
   { key: "draft", label: "草稿箱", count: 27 },
+  { key: "match", label: "匹配结果", count: 0 },
 ];
 
 const FOLDERS = [
@@ -106,9 +109,10 @@ function ProductsPage() {
   const [filters, setFilters] = useState({ domain: "全部", motor: "全部", housing: "全部" });
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [detail, setDetail] = useState<Product | null>(null);
+  const { records, removeRecord } = useMatchHistory();
 
   const products = useMemo(() => {
-    return PRODUCTS.filter((p) => p.status === category)
+    return PRODUCTS.filter((p) => p.status === (category as Product["status"]))
       .filter((p) => (filters.domain === "全部" ? true : p.domain === filters.domain))
       .filter((p) => (filters.motor === "全部" ? true : p.motorType === filters.motor))
       .filter((p) => (filters.housing === "全部" ? true : p.housing === filters.housing))
@@ -140,9 +144,12 @@ function ProductsPage() {
             <button className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-[image:var(--gradient-primary)] text-[13px] font-semibold text-primary-foreground shadow-[var(--shadow-elegant)]">
               <Sparkles className="h-3.5 w-3.5" /> 生成式设计
             </button>
-            <button className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-primary/30 bg-primary-soft text-[13px] font-semibold text-primary hover:bg-primary/10">
+            <Link
+              to="/products/design"
+              className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-primary/30 bg-primary-soft text-[13px] font-semibold text-primary hover:bg-primary/10"
+            >
               <Plus className="h-3.5 w-3.5" /> 设计产品
-            </button>
+            </Link>
           </div>
 
           <div className="px-4">
@@ -160,7 +167,9 @@ function ProductsPage() {
                     )}
                   >
                     <span>{c.label}</span>
-                    <span className="tabular-nums text-[12px] text-muted-foreground">{c.count}</span>
+                    <span className="tabular-nums text-[12px] text-muted-foreground">
+                      {c.key === "match" ? records.length : c.count}
+                    </span>
                   </button>
                 </li>
               ))}
@@ -236,7 +245,9 @@ function ProductsPage() {
 
           {/* Content */}
           <div className="flex-1 overflow-auto px-6 py-5">
-            {view === "table" ? (
+            {category === "match" ? (
+              <MatchRecords records={records} onRemove={removeRecord} />
+            ) : view === "table" ? (
               <TableView
                 products={products}
                 selected={selected}

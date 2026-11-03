@@ -51,6 +51,7 @@ function InteractivePart({ target, hovered, selected, instances, parts, showMesh
         material.opacity = active ? HIGHLIGHT_OPACITY : state.opacity;
         material.transparent = material.opacity < 1;
         material.depthWrite = material.opacity >= 1;
+        material.depthTest = !active;
         material.emissive.set(highlight); material.emissiveIntensity = active ? 0.3 : 0;
         material.needsUpdate = true;
         cleanup.push(() => { material.copy(original); original.dispose(); });
@@ -128,6 +129,7 @@ function Assembly({ parts, structure, parameters, showDirection, showMesh, dimen
   </group>;
 }
 function DimensionAnnotation({ parameter, parameters, structure, color }: { parameter: keyof MotorParameters; parameters: MotorParameters; structure: StructureType; color: string }) {
+  if (parameter === "slots" || parameter === "poles" || parameter === "poleRatio") return null;
   const dimensions = motorDimensions(parameters);
   const stator = parameter.startsWith("stator") || ["slotWidth", "yokeHeight", "openingWidth", "openingHeight", "shoulderHeight", "bottomRadius"].includes(parameter);
   const layers = structureLayers(structure);

@@ -29,6 +29,24 @@ function AnnularPart({ inner, outer, height, angle, color, opacity, y, rotation 
     <meshStandardMaterial color={color} map={texture} metalness={0.72} roughness={0.34} transparent={opacity < 1} opacity={opacity} depthWrite={opacity >= 1} side={DoubleSide} />
   </mesh>;
 }
+function ToothCoil({ inner, outer, width, thickness, height, y, color, opacity }: { inner: number; outer: number; width: number; thickness: number; height: number; y: number; color: string; opacity: number }) {
+  const geometry = useMemo(() => {
+    const rounded = (path: Shape | Path, left: number, right: number, halfWidth: number, radius: number) => {
+      path.moveTo(left + radius, -halfWidth);
+      path.lineTo(right - radius, -halfWidth); path.quadraticCurveTo(right, -halfWidth, right, -halfWidth + radius);
+      path.lineTo(right, halfWidth - radius); path.quadraticCurveTo(right, halfWidth, right - radius, halfWidth);
+      path.lineTo(left + radius, halfWidth); path.quadraticCurveTo(left, halfWidth, left, halfWidth - radius);
+      path.lineTo(left, -halfWidth + radius); path.quadraticCurveTo(left, -halfWidth, left + radius, -halfWidth); path.closePath();
+    };
+    const shape = new Shape();
+    rounded(shape, inner - thickness, outer + thickness, width / 2 + thickness, thickness);
+    const hole = new Path(); rounded(hole, inner, outer, width / 2, Math.min(thickness / 2, width / 4)); shape.holes.push(hole);
+    const result = new ExtrudeGeometry(shape, { depth: height, bevelEnabled: true, bevelSize: 0.001, bevelThickness: 0.001, bevelSegments: 2, curveSegments: 12 });
+    result.rotateX(-Math.PI / 2); result.translate(0, -height / 2, 0); return result;
+  }, [inner, outer, width, thickness, height]);
+  useEffect(() => () => geometry.dispose(), [geometry]);
+  return <mesh geometry={geometry} position={[0, y, 0]}><meshStandardMaterial color={color} metalness={0.35} roughness={0.3} transparent={opacity < 1} opacity={opacity} depthWrite={opacity >= 1} /></mesh>;
+}
 function InteractivePart({ target, hovered, selected, instances, parts, showMesh, meshColor, hover, select, highlight, selectionColor, children }: {
   target: PartTarget; selected: PartTarget | null; instances: InstanceState; parts: PartState; showMesh: boolean; meshColor: string; hovered: PartTarget | null; hover: (target: PartTarget | null) => void;
   select: (target: PartTarget) => void; highlight: string; selectionColor: string; children: ReactNode;
@@ -116,6 +134,9 @@ function Assembly({ parts, structure, parameters, yokeType, showDirection, showM
   const yokeHeight = hasStatorYoke(structure, yokeType) ? Math.max(0.015, Math.min(statorHeight - 0.01, parameters.yokeHeight * scale)) : 0;
   const backIronHeight = Math.max(0.005, Math.min(rotorHeight - 0.005, parameters.backIron * scale));
   const magnetHeight = rotorHeight - backIronHeight;
+  const toothAngle = Math.max(0.02, Math.PI * 2 / slots - parameters.slotWidth * scale / ((innerS + outerS) / 2));
+  const coilWidth = Math.max(0.006, (outerS - 0.02) * Math.sin(toothAngle) + 0.006);
+  const coilThickness = Math.max(0.003, Math.min(parameters.slotWidth * scale * 0.22, ((innerS + outerS) / 2) * Math.PI / slots * 0.18));
   const part = (key: PartKey, id: string, children: ReactNode) => <InteractivePart key={id} target={{ key, id }} hovered={hovered} selected={selected} instances={instances} parts={parts} showMesh={showMesh} meshColor={colors.mesh} hover={hover} select={select} highlight={colors.highlight} selectionColor={colors.annotation}>{children}</InteractivePart>;
   return <group rotation={[0.12, 0.35, 0]}>
     {layers.stators.map((layer, index) => <group key={`stator-${index}`}>
@@ -123,8 +144,8 @@ function Assembly({ parts, structure, parameters, yokeType, showDirection, showM
         {yokeHeight > 0 && part("stator", `core-${index}`, <AnnularPart inner={innerS} outer={outerS} height={yokeHeight} y={layer * spacing - statorHeight / 2 + yokeHeight / 2} color={colors.steel} opacity={parts.stator.opacity} texture={texture} />)}
         {Array.from({ length: slots }, (_, i) => part("stator", `tooth-${index}-${i}`, <AnnularPart inner={innerS + 0.02} outer={outerS - 0.02} height={statorHeight - yokeHeight} angle={Math.max(0.02, Math.PI * 2 / slots - parameters.slotWidth * scale / ((innerS + outerS) / 2))} rotation={i * Math.PI * 2 / slots} y={layer * spacing + yokeHeight / 2} color={colors.tooth} opacity={parts.stator.opacity} texture={texture} />))}
       </group>}
-      {parts.winding.visible && Array.from({ length: slots }, (_, i) => part("winding", `coil-${index}-${i}`, <group rotation={[0, (i + 0.47) * Math.PI * 2 / slots, 0]}>
-        {Array.from({ length: 5 }, (_, j) => <AnnularPart key={j} inner={innerS + 0.055 + j * 0.008} outer={outerS - 0.055 - j * 0.008} height={Math.max(0.008, (statorHeight - yokeHeight) / 7)} angle={Math.PI * 2 / slots * 0.44} y={layer * spacing + yokeHeight / 2 + (j / 5 - 0.4) * (statorHeight - yokeHeight)} color={colors[`phase${windingPhase(i)}`]} opacity={parts.winding.opacity}  />)}
+      {parts.winding.visible && Array.from({ length: slots }, (_, i) => part("winding", `coil-${index}-${i}`, <group rotation={[0, i * Math.PI * 2 / slots + toothAngle / 2, 0]}>
+        {Array.from({ length: 2 }, (_, j) => <ToothCoil key={j} inner={innerS + 0.015} outer={outerS - 0.015} width={coilWidth} thickness={coilThickness} height={(statorHeight - yokeHeight) * 0.34} y={layer * spacing + yokeHeight / 2 + (j === 0 ? -1 : 1) * (statorHeight - yokeHeight) * 0.23} color={colors[`phase${windingPhase(i)}`]} opacity={parts.winding.opacity} />)}
       </group>))}
     </group>)}
     {layers.rotors.map((layer, index) => <group key={`rotor-${index}`}>

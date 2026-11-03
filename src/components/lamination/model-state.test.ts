@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { hasStatorYoke, windingPhase, STATOR_YOKE_TYPES, HIGHLIGHT_OPACITY, motorDimensions, effectivePart, setTargetVisibility, setTargetTransparency, INITIAL_PARTS, INITIAL_PARAMETERS, partComponents, isPartHighlighted, structureLayers, setPartVisibility, setPartTransparency } from "./model-state";
 describe("轴向磁通结构", () => {
+  it("参考图三相排布为每相三个相邻线圈连续循环", () => { expect(Array.from({ length: 12 }, (_, index) => windingPhase(index))).toEqual(["A", "A", "A", "B", "B", "B", "C", "C", "C", "A", "A", "A"]); });
   it("双转子单定子支持有定子轭和无定子轭", () => { expect(STATOR_YOKE_TYPES).toEqual(["有定子轭", "无定子轭"]); expect(hasStatorYoke("单定子双转子", "有定子轭")).toBe(true); expect(hasStatorYoke("单定子双转子", "无定子轭")).toBe(false); });
   it("无定子轭移除轭部且保留27个独立定子齿", () => { const components = partComponents("stator", "单定子双转子", INITIAL_PARAMETERS, "无定子轭"); expect(components).toHaveLength(27); expect(components.some((part) => part.id === "core-0")).toBe(false); expect(partComponents("stator", "单定子双转子", INITIAL_PARAMETERS, "有定子轭")).toHaveLength(28); });
   it("其他结构不应用无定子轭选项", () => { expect(hasStatorYoke("双定子单转子", "无定子轭")).toBe(true); expect(hasStatorYoke("单定子单转子", "无定子轭")).toBe(true); });

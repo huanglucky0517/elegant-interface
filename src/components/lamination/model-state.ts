@@ -6,7 +6,7 @@ export function hasStatorYoke(structure: StructureType, type: StatorYokeType) {
   return structure !== "单定子双转子" || type === "有定子轭";
 }
 export const WINDING_PHASES = ["A", "B", "C"] as const;
-export function windingPhase(index: number) { return WINDING_PHASES[((index % 3) + 3) % 3]; }
+export function windingPhase(index: number) { return WINDING_PHASES[((Math.floor(index / 3) % 3) + 3) % 3]; }
 export type PartKey = "rotor" | "stator" | "magnet" | "winding";
 export const PART_LABELS: Record<PartKey, string> = { rotor: "转子", stator: "定子", magnet: "磁钢", winding: "绕组" };
 export type PartState = Record<PartKey, { visible: boolean; opacity: number }>;

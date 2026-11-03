@@ -63,6 +63,11 @@
   --color-surface-elevated: var(--surface-elevated);
   --color-primary-soft: var(--primary-soft);
   --color-primary-glow: var(--primary-glow);
+  --color-motor-steel: var(--motor-steel);
+  --color-motor-copper: var(--motor-copper);
+  --color-motor-magnet: var(--motor-magnet);
+  --color-motor-north: var(--motor-magnet-north);
+  --color-motor-south: var(--motor-magnet-south);
 }
 
 :root {
@@ -112,11 +117,16 @@
   --sidebar-accent-foreground: oklch(0.208 0.042 265.755);
   --sidebar-border: oklch(0.929 0.013 255.508);
   --sidebar-ring: oklch(0.704 0.04 256.788);
-  --motor-steel: #89969e;
-  --motor-tooth: #b5bfc6;
-  --motor-copper: #c58042;
-  --motor-magnet-north: #c84f62;
-  --motor-magnet-south: #507cad;
+  --motor-steel: #9CA3AF;
+  --motor-tooth: #9CA3AF;
+  --motor-copper: #D97706;
+  --motor-magnet: #2B303A;
+  --motor-magnet-north: #DC2626;
+  --motor-magnet-south: #2563EB;
+  --motor-highlight: #A78BFA;
+  --motor-sphere-sheen: radial-gradient(circle at 30% 25%, #ffffff 0%, #ffffff80 9%, transparent 40%);
+  --motor-sphere-shade: radial-gradient(circle at 30% 25%, transparent 25%, #00000033 65%, #00000099 100%);
+  --motor-sphere-shadow: inset -2px -3px 4px #00000040, 0 2px 3px #00000025;
   --motor-shaft: #ced6dc;
   --motor-light: #ffffff;
 }
@@ -203,4 +213,8 @@
 .lamination-grid {
   background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px);
   background-size: 24px 24px;
+}
+.part-sphere {
+  background-image: var(--motor-sphere-sheen), var(--motor-sphere-shade);
+  box-shadow: var(--motor-sphere-shadow);
 }

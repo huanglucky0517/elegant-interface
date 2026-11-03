@@ -25,6 +25,20 @@ export interface MotorParameters {
 export const INITIAL_PARAMETERS: MotorParameters = {
   poles: 8, slots: 27, statorOuter: 330, statorInner: 224, rotorOuter: 350, rotorInner: 200, gap: 0.7,
 };
+export interface PartComponent { id: string; label: string }
+export interface PartTarget { key: PartKey; id?: string }
+export function partComponents(key: PartKey, structure: StructureType, parameters: MotorParameters): PartComponent[] {
+  const layers = structureLayers(structure);
+  const slots = Math.min(72, Math.max(3, Math.round(parameters.slots)));
+  const poles = Math.min(48, Math.max(2, Math.round(parameters.poles)));
+  if (key === "rotor") return [...layers.rotors.map((_, i) => ({ id: `rotor-${i}`, label: `转子背铁 ${i + 1}` })), { id: "shaft", label: "转轴" }, { id: "hub", label: "轮毂" }];
+  if (key === "stator") return layers.stators.flatMap((_, i) => [{ id: `core-${i}`, label: `定子铁芯 ${i + 1}` }, ...Array.from({ length: slots }, (_, j) => ({ id: `tooth-${i}-${j}`, label: `定子 ${i + 1} · 齿 ${j + 1}` }))]);
+  if (key === "winding") return layers.stators.flatMap((_, i) => Array.from({ length: slots }, (_, j) => ({ id: `coil-${i}-${j}`, label: `定子 ${i + 1} · 线圈 ${j + 1}` })));
+  return layers.rotors.flatMap((_, i) => Array.from({ length: poles }, (_, j) => ({ id: `magnet-${i}-${j}`, label: `转子 ${i + 1} · 磁钢 ${j + 1}` })));
+}
+export function isPartHighlighted(hovered: PartTarget | null, key: PartKey, id: string): boolean {
+  return hovered?.key === key && (hovered.id === undefined || hovered.id === id);
+}
 export interface DetailParameter { key: string; label: string; value: string; options?: string[]; section: string }
 export const STATOR_DETAILS: DetailParameter[] = [
   { key: "toothOuter", label: "齿顶外径(mm)", value: "330", section: "冲片" },

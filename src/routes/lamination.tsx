@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import MotorViewer from "@/components/lamination/MotorViewer";
 import { PartsPanel } from "@/components/lamination/PartsPanel";
 import { LaminationParams } from "@/components/lamination/LaminationParams";
-import { INITIAL_PARTS, INITIAL_PARAMETERS, setPartTransparency, setPartVisibility, type PartKey, type StructureType } from "@/components/lamination/model-state";
+import { INITIAL_PARTS, INITIAL_PARAMETERS, setPartTransparency, setPartVisibility, type PartTarget, type PartKey, type StructureType } from "@/components/lamination/model-state";
 
 export const Route = createFileRoute("/lamination")({
   ssr: false,
@@ -74,7 +74,8 @@ function RightPanel() {
 
 function LaminationPage() {
   const [showDir, setShowDir] = useState(false);
-  const [partsOpen, setPartsOpen] = useState(true);
+  const [partsOpen, setPartsOpen] = useState(false);
+  const [hovered, setHovered] = useState<PartTarget | null>(null);
   const [paramsOpen, setParamsOpen] = useState(true);
   const [selectedPart, setSelectedPart] = useState<PartKey>("stator");
   const [parts, setParts] = useState(INITIAL_PARTS);
@@ -93,13 +94,16 @@ function LaminationPage() {
               {!paramsOpen && <Button variant="outline" size="sm" onClick={() => setParamsOpen(true)}>指定冲片</Button>}
               {!partsOpen && <Button variant="outline" size="sm" onClick={() => setPartsOpen(true)}>三维零部件结构</Button>}
             </div>
-            <label className="absolute right-4 top-14 z-10 inline-flex items-center gap-1.5 rounded border border-border bg-card px-2 py-1 text-[12px]">
-              <input type="checkbox" checked={showDir} onChange={(e) => setShowDir(e.target.checked)} className="accent-primary" />显示充磁方向
-            </label>
             <div className="h-full w-full pt-12">
-              <MotorViewer parameters={parameters} structure={structure} parts={parts} showDirection={showDir} select={setSelectedPart} />
+              <MotorViewer parameters={parameters} structure={structure} parts={parts} showDirection={showDir} hovered={hovered} hover={setHovered} select={(key) => { setSelectedPart(key); setPartsOpen(true); }} />
             </div>
-            {partsOpen && <PartsPanel parts={parts} selected={selectedPart} onSelect={setSelectedPart} onVisibility={(key, visible) => setParts((p) => setPartVisibility(p, key, visible))} onTransparency={(key, percent) => setParts((p) => setPartTransparency(p, key, percent))} onClose={() => setPartsOpen(false)} />}
+            <div className="absolute bottom-24 right-4 top-14 z-10 flex w-[236px] flex-col items-stretch gap-3 pointer-events-none">
+              {partsOpen && <div className="pointer-events-auto flex min-h-0 flex-col"><PartsPanel parts={parts} selected={selectedPart} structure={structure} parameters={parameters} onHover={setHovered} onSelect={setSelectedPart} onVisibility={(key, visible) => setParts((p) => setPartVisibility(p, key, visible))} onTransparency={(key, percent) => setParts((p) => setPartTransparency(p, key, percent))} onClose={() => { setPartsOpen(false); setHovered(null); }} /></div>}
+              <div className="pointer-events-auto shrink-0 self-end rounded-md border border-border bg-card/95 px-3 py-2 shadow-[var(--shadow-card)]">
+                <label className="inline-flex items-center gap-2 text-[12px]"><input type="checkbox" checked={showDir} onChange={(e) => setShowDir(e.target.checked)} className="accent-primary" />显示充磁方向</label>
+                {showDir && <div className="mt-2 flex items-center justify-end gap-4 text-[11px]"><span className="flex items-center gap-1 text-motor-north"><span className="h-2 w-2 rounded-full bg-motor-north" />N 极</span><span className="flex items-center gap-1 text-motor-south"><span className="h-2 w-2 rounded-full bg-motor-south" />S 极</span></div>}
+              </div>
+            </div>
           </main>
           <RightPanel />
         </div>

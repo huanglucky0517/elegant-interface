@@ -29,13 +29,15 @@ function AnnularPart({ inner, outer, height, angle, color, opacity, y, rotation 
     <meshStandardMaterial color={color} map={texture} metalness={0.72} roughness={0.34} transparent={opacity < 1} opacity={opacity} depthWrite={opacity >= 1} side={DoubleSide} />
   </mesh>;
 }
-function InteractivePart({ target, hovered, selected, instances, parts, showMesh, meshColor, hover, select, highlight, children }: {
+function InteractivePart({ target, hovered, selected, instances, parts, showMesh, meshColor, hover, select, highlight, selectionColor, children }: {
   target: PartTarget; selected: PartTarget | null; instances: InstanceState; parts: PartState; showMesh: boolean; meshColor: string; hovered: PartTarget | null; hover: (target: PartTarget | null) => void;
-  select: (target: PartTarget) => void; highlight: string; children: ReactNode;
+  select: (target: PartTarget) => void; highlight: string; selectionColor: string; children: ReactNode;
 }) {
   const group = useRef<Group>(null);
   const { invalidate } = useThree();
-  const active = isPartHighlighted(hovered, target.key, target.id ?? "") || isPartHighlighted(selected, target.key, target.id ?? "");
+  const isSelected = isPartHighlighted(selected, target.key, target.id ?? "");
+  const active = isPartHighlighted(hovered, target.key, target.id ?? "") || isSelected;
+  const fillColor = isSelected ? selectionColor : highlight;
   const state = effectivePart(parts, instances, target);
   useEffect(() => {
     const meshes: Mesh[] = [];
@@ -46,13 +48,13 @@ function InteractivePart({ target, hovered, selected, instances, parts, showMesh
       materials.forEach((material) => {
         if (!(material instanceof MeshStandardMaterial)) return;
         const original = material.clone();
-        material.color.set(active ? highlight : original.color);
+        material.color.set(active ? fillColor : original.color);
         material.map = active ? null : original.map;
         material.opacity = active ? HIGHLIGHT_OPACITY : state.opacity;
         material.transparent = material.opacity < 1;
         material.depthWrite = material.opacity >= 1;
         material.depthTest = !active;
-        material.emissive.set(highlight); material.emissiveIntensity = active ? 0.3 : 0;
+        material.emissive.set(fillColor); material.emissiveIntensity = active ? 0.3 : 0;
         material.needsUpdate = true;
         cleanup.push(() => { material.copy(original); original.dispose(); });
       });
@@ -68,7 +70,7 @@ function InteractivePart({ target, hovered, selected, instances, parts, showMesh
     });
     invalidate();
     return () => cleanup.forEach((dispose) => dispose());
-  }, [active, highlight, children, invalidate, state.opacity, showMesh, meshColor]);
+  }, [active, highlight, fillColor, children, invalidate, state.opacity, showMesh, meshColor]);
   return <group ref={group} visible={state.visible} onClick={(event) => { event.stopPropagation(); if (event.delta <= 4) select(target); }} onPointerOver={(event) => { event.stopPropagation(); hover(target); }} onPointerOut={(event) => { event.stopPropagation(); hover(null); }}>{children}</group>;
 
 }
@@ -85,7 +87,7 @@ function FitCamera() {
   }, [camera, size.width, size.height, invalidate]);
   return null;
 }
-function AnnotationArrow({ tip, from }: { tip: [number, number, number]; from: [number, number, number] }) {
+function AnnotationArrow({ tip, from, colorClass = "fill-motor-annotation" }: { tip: [number, number, number]; from: [number, number, number]; colorClass?: string }) {
   const group = useRef<Group>(null);
   const arrow = useRef<SVGSVGElement>(null);
   const { camera, size } = useThree();
@@ -98,7 +100,7 @@ function AnnotationArrow({ tip, from }: { tip: [number, number, number]; from: [
     const angle = Math.atan2(-(vectors.tip.y - vectors.from.y) * size.height, (vectors.tip.x - vectors.from.x) * size.width);
     arrow.current.style.transform = `rotate(${angle}rad)`;
   });
-  return <group ref={group}><Html center position={tip} style={{ pointerEvents: "none" }}><svg ref={arrow} width="16" height="14" viewBox="-16 -7 16 14" className="overflow-visible fill-motor-annotation" style={{ transformOrigin: "100% 50%", marginLeft: -16 }} aria-hidden="true"><path d="M 0 0 L -16 -7 L -16 7 Z" /></svg></Html></group>;
+  return <group ref={group}><Html center position={tip} style={{ pointerEvents: "none" }}><svg ref={arrow} width="16" height="14" viewBox="-16 -7 16 14" className={`overflow-visible ${colorClass}`} style={{ transformOrigin: "100% 50%", marginLeft: -16 }} aria-hidden="true"><path d="M 0 0 L -16 -7 L -16 7 Z" /></svg></Html></group>;
 }
 function Assembly({ parts, structure, parameters, showDirection, showMesh, dimension, selected, instances, colors, texture, select, hovered, hover }: {
   parts: PartState; structure: StructureType; parameters: MotorParameters; showDirection: boolean;
@@ -111,7 +113,7 @@ function Assembly({ parts, structure, parameters, showDirection, showMesh, dimen
   const slots = Math.min(72, Math.max(3, Math.round(parameters.slots)));
   const poles = Math.min(48, Math.max(2, Math.round(parameters.poles)));
   const spacing = (statorHeight + rotorHeight) / 2 + Math.max(0, parameters.gap) * scale;
-  const part = (key: PartKey, id: string, children: ReactNode) => <InteractivePart key={id} target={{ key, id }} hovered={hovered} selected={selected} instances={instances} parts={parts} showMesh={showMesh} meshColor={colors.mesh} hover={hover} select={select} highlight={colors.highlight}>{children}</InteractivePart>;
+  const part = (key: PartKey, id: string, children: ReactNode) => <InteractivePart key={id} target={{ key, id }} hovered={hovered} selected={selected} instances={instances} parts={parts} showMesh={showMesh} meshColor={colors.mesh} hover={hover} select={select} highlight={colors.highlight} selectionColor={colors.annotation}>{children}</InteractivePart>;
   return <group rotation={[0.12, 0.35, 0]}>
     {layers.stators.map((layer, index) => <group key={`stator-${index}`}>
       {parts.stator.visible && <group>
@@ -136,7 +138,7 @@ function Assembly({ parts, structure, parameters, showDirection, showMesh, dimen
       const extent = Math.max(...layers.rotors.map(Math.abs), ...layers.stators.map(Math.abs)) * spacing + statorHeight + 0.35;
       const start: [number, number, number] = [x, i % 2 ? extent : -extent, z];
       const end: [number, number, number] = [x, i % 2 ? -extent : extent, z];
-      return <group key={`flux-${i}`}><Line points={[start, end]} color={colors.annotation} lineWidth={2} dashed dashSize={0.045} gapSize={0.03} depthTest={false} toneMapped={false} /><AnnotationArrow tip={end} from={start} /></group>;
+      return <group key={`flux-${i}`}><Line points={[start, end]} color={i % 2 ? colors.south : colors.north} lineWidth={2} dashed dashSize={0.045} gapSize={0.03} depthTest={false} toneMapped={false} /><AnnotationArrow tip={end} from={start} colorClass={i % 2 ? "fill-motor-south" : "fill-motor-north"} /></group>;
     })}
     {dimension && <DimensionAnnotation parameter={dimension} parameters={parameters} structure={structure} color={colors.annotation} />}
     {parts.rotor.visible && <group>

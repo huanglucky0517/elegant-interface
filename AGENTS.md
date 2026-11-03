@@ -5,3 +5,4 @@
 - Generate part-tree identities with pure partComponents rules and share them with model interaction groups; selection and hover use PartTarget and instance overrides use effectivePart so individual controls and geometry remain linked.
 - Use fixed physical scale from motorDimensions and shared numeric detail mappings for CAD annotations and geometry; diameter edits must not rescale unrelated parts. Mesh display is a visual triangulation overlay, not an analysis solver.
 - Share screen-oriented solid arrowheads between flux and dimension annotations so their direction remains legible during camera rotation.
+- Keep conditional stator-yoke presence and winding phase assignment in pure model-state rules shared by geometry and the part tree; depth-test solid and highlight materials so selection does not bypass physical occlusion.

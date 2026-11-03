@@ -2,8 +2,9 @@ import { useState } from "react";
 import { CheckCircle2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { DETAIL_GEOMETRY, STATOR_DETAILS, ROTOR_DETAILS, STRUCTURE_TYPES, type MotorParameters, type StructureType } from "./model-state";
-export function LaminationParams({ parameters, structure, onStructure, onParameter, onDimension, onClose }: {
+import { DETAIL_GEOMETRY, STATOR_DETAILS, ROTOR_DETAILS, STRUCTURE_TYPES, STATOR_YOKE_TYPES, type StatorYokeType, type MotorParameters, type StructureType } from "./model-state";
+export function LaminationParams({ parameters, structure, yokeType, onYokeType, onStructure, onParameter, onDimension, onClose }: {
+  yokeType: StatorYokeType; onYokeType: (type: StatorYokeType) => void;
   parameters: MotorParameters; structure: StructureType; onStructure: (type: StructureType) => void;
   onParameter: (key: keyof MotorParameters, value: number) => void; onClose: () => void;
   onDimension: (key: keyof MotorParameters | null) => void;
@@ -24,6 +25,7 @@ export function LaminationParams({ parameters, structure, onStructure, onParamet
       <div role="tablist" aria-label="零部件参数" className="mt-3 grid grid-cols-2 border-b border-border">{(["stator", "rotor"] as const).map((t) => <Button role="tab" aria-selected={tab === t} key={t} variant="ghost" onClick={() => setTab(t)} className={cn("h-10 rounded-none border-b-2 text-[12px]", tab === t ? "border-primary text-primary" : "border-transparent text-muted-foreground")}>{t === "stator" ? "定子" : "转子"}</Button>)}</div>
       <div role="tabpanel">{list.map((p, i) => <div key={p.key}>
         {(i === 0 || list[i - 1]?.section !== p.section) && <h3 className="px-3 pb-1 pt-3 text-[11px] font-semibold text-foreground">{p.section}</h3>}
+        {i === 0 && tab === "stator" && structure === "单定子双转子" && <div className="flex items-center gap-2 px-3 py-1.5"><label htmlFor="stator-yoke-type" className="w-[104px] shrink-0 text-[12px] text-muted-foreground">定子轭类型</label><select id="stator-yoke-type" value={yokeType} onChange={(e) => onYokeType(e.target.value as StatorYokeType)} className="h-8 min-w-0 flex-1 rounded border border-input bg-background p-1 text-[12px] outline-none focus:border-primary">{STATOR_YOKE_TYPES.map((type) => <option key={type}>{type}</option>)}</select></div>}
         <div className="flex items-center gap-2 px-3 py-1.5"><label htmlFor={p.key} className="w-[104px] shrink-0 text-[12px] text-muted-foreground">{p.label}</label>{p.options ? <select id={p.key} value={details[p.key]} onChange={(e) => setDetails({ ...details, [p.key]: e.target.value })} className="h-8 min-w-0 flex-1 rounded border border-input bg-background p-1 text-[12px] outline-none focus:border-primary">{p.options.map((o) => <option key={o}>{o}</option>)}</select> : <input id={p.key} value={DETAIL_GEOMETRY[p.key] ? parameters[DETAIL_GEOMETRY[p.key]] : details[p.key]} onFocus={() => { const key = DETAIL_GEOMETRY[p.key]; if (key) onDimension(key); }} onChange={(e) => { const key = DETAIL_GEOMETRY[p.key]; if (key) onParameter(key, Number(e.target.value)); else setDetails({ ...details, [p.key]: e.target.value }); }} className="h-8 min-w-0 flex-1 rounded border border-input bg-background p-1 text-right text-[12px] outline-none focus:border-primary" />}</div>
       </div>)}</div>
     </div>

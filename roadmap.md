@@ -7,3 +7,4 @@
 - [x] Align board property panels and add individual selection/visibility/transparency.
 - [x] Add orange highlight, dashed axial directions and mesh display.
 - [x] Link editable dimensions to geometry and annotations; verify interactions and rules.
+- [x] Add conditional stator yoke options with model/tree linkage, fix occlusion and apply three-phase winding colors; verify.

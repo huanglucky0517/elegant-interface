@@ -65,6 +65,8 @@
   --color-primary-glow: var(--primary-glow);
   --color-motor-steel: var(--motor-steel);
   --color-motor-copper: var(--motor-copper);
+  --color-motor-phase-b: var(--motor-phase-b);
+  --color-motor-phase-c: var(--motor-phase-c);
   --color-motor-magnet: var(--motor-magnet);
   --color-motor-north: var(--motor-magnet-north);
   --color-motor-south: var(--motor-magnet-south);
@@ -121,7 +123,9 @@
   --sidebar-ring: oklch(0.704 0.04 256.788);
   --motor-steel: #9CA3AF;
   --motor-tooth: #9CA3AF;
-  --motor-copper: #D97706;
+  --motor-copper: #F59E0B;
+  --motor-phase-b: #2563EB;
+  --motor-phase-c: #9333EA;
   --motor-magnet: #2B303A;
   --motor-magnet-north: #DC2626;
   --motor-magnet-south: #2563EB;

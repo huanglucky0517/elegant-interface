@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import MotorViewer from "@/components/lamination/MotorViewer";
 import { PartsPanel } from "@/components/lamination/PartsPanel";
 import { LaminationParams } from "@/components/lamination/LaminationParams";
-import { INITIAL_PARTS, INITIAL_PARAMETERS, setTargetTransparency, setTargetVisibility, type InstanceState, type MotorParameters, type PartTarget, type PartKey, type StructureType } from "@/components/lamination/model-state";
+import { INITIAL_PARTS, INITIAL_PARAMETERS, setTargetTransparency, setTargetVisibility, type StatorYokeType, type InstanceState, type MotorParameters, type PartTarget, type PartKey, type StructureType } from "@/components/lamination/model-state";
 
 export const Route = createFileRoute("/lamination")({
   ssr: false,
@@ -84,6 +84,7 @@ function LaminationPage() {
   const [parts, setParts] = useState(INITIAL_PARTS);
   const [structure, setStructure] = useState<StructureType>("单定子双转子");
   const [parameters, setParameters] = useState(INITIAL_PARAMETERS);
+  const [yokeType, setYokeType] = useState<StatorYokeType>("有定子轭");
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-background text-foreground">
       <TopBar />
@@ -97,11 +98,11 @@ function LaminationPage() {
               {!partsOpen && <Button variant="outline" size="sm" onClick={() => setPartsOpen(true)}>三维零部件结构</Button>}
             </div>
             <div className={`h-full w-full pt-12 ${paramsOpen ? "pl-[280px]" : ""} ${partsOpen ? "pr-[256px]" : ""}`}>
-              <MotorViewer parameters={parameters} structure={structure} parts={parts} showDirection={showDir} showMesh={showMesh} dimension={dimension} selected={selectedPart} instances={instances} hovered={hovered} hover={setHovered} clearSelection={() => { setSelectedPart(null); setHovered(null); }} select={(target) => { setSelectedPart(target); setPartsOpen(true); }} />
+              <MotorViewer yokeType={yokeType} parameters={parameters} structure={structure} parts={parts} showDirection={showDir} showMesh={showMesh} dimension={dimension} selected={selectedPart} instances={instances} hovered={hovered} hover={setHovered} clearSelection={() => { setSelectedPart(null); setHovered(null); }} select={(target) => { setSelectedPart(target); setPartsOpen(true); }} />
             </div>
-            {paramsOpen && <div className="absolute bottom-24 left-4 top-5 z-20 w-[264px]"><LaminationParams parameters={parameters} structure={structure} onStructure={setStructure} onDimension={setDimension} onParameter={(key, value) => { if (!Number.isFinite(value)) return; setParameters((p) => ({ ...p, [key]: value })); setDimension(key); }} onClose={() => { setParamsOpen(false); setDimension(null); }} /></div>}
+            {paramsOpen && <div className="absolute bottom-24 left-4 top-5 z-20 w-[264px]"><LaminationParams yokeType={yokeType} onYokeType={(type) => { setYokeType(type); setSelectedPart(null); setHovered(null); }} parameters={parameters} structure={structure} onStructure={setStructure} onDimension={setDimension} onParameter={(key, value) => { if (!Number.isFinite(value)) return; setParameters((p) => ({ ...p, [key]: value })); setDimension(key); }} onClose={() => { setParamsOpen(false); setDimension(null); }} /></div>}
             <div className="absolute bottom-24 right-4 top-5 z-20 flex w-[236px] flex-col items-stretch gap-3 pointer-events-none">
-              {partsOpen && <div className="pointer-events-auto flex min-h-0 flex-col"><PartsPanel parts={parts} selected={selectedPart} structure={structure} parameters={parameters} onHover={setHovered} hovered={hovered} instances={instances} onSelect={setSelectedPart} onVisibility={(target, visible) => { const next = setTargetVisibility(parts, instances, target, visible); setParts(next.parts); setInstances(next.instances); }} onTransparency={(target, percent) => { const next = setTargetTransparency(parts, instances, target, percent); setParts(next.parts); setInstances(next.instances); }} onClose={() => { setPartsOpen(false); setHovered(null); setSelectedPart(null); }} /></div>}
+              {partsOpen && <div className="pointer-events-auto flex min-h-0 flex-col"><PartsPanel yokeType={yokeType} parts={parts} selected={selectedPart} structure={structure} parameters={parameters} onHover={setHovered} hovered={hovered} instances={instances} onSelect={setSelectedPart} onVisibility={(target, visible) => { const next = setTargetVisibility(parts, instances, target, visible); setParts(next.parts); setInstances(next.instances); }} onTransparency={(target, percent) => { const next = setTargetTransparency(parts, instances, target, percent); setParts(next.parts); setInstances(next.instances); }} onClose={() => { setPartsOpen(false); setHovered(null); setSelectedPart(null); }} /></div>}
               <div className="pointer-events-auto shrink-0 w-full rounded-md border border-border bg-card/95 px-3 py-2 shadow-[var(--shadow-card)]">
                 <label className="inline-flex items-center gap-2 text-[12px]"><input type="checkbox" checked={showDir} onChange={(e) => setShowDir(e.target.checked)} className="accent-primary" />显示充磁方向</label>
                 <label className="mt-2 flex items-center gap-2 text-[12px]"><input type="checkbox" checked={showMesh} onChange={(e) => setShowMesh(e.target.checked)} className="accent-primary" />显示网格剖分</label>

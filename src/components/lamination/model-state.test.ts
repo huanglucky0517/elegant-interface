@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { HIGHLIGHT_OPACITY, motorDimensions, effectivePart, setTargetVisibility, setTargetTransparency, INITIAL_PARTS, INITIAL_PARAMETERS, partComponents, isPartHighlighted, structureLayers, setPartVisibility, setPartTransparency } from "./model-state";
+import { hasStatorYoke, windingPhase, STATOR_YOKE_TYPES, HIGHLIGHT_OPACITY, motorDimensions, effectivePart, setTargetVisibility, setTargetTransparency, INITIAL_PARTS, INITIAL_PARAMETERS, partComponents, isPartHighlighted, structureLayers, setPartVisibility, setPartTransparency } from "./model-state";
 describe("轴向磁通结构", () => {
+  it("双转子单定子支持有定子轭和无定子轭", () => { expect(STATOR_YOKE_TYPES).toEqual(["有定子轭", "无定子轭"]); expect(hasStatorYoke("单定子双转子", "有定子轭")).toBe(true); expect(hasStatorYoke("单定子双转子", "无定子轭")).toBe(false); });
+  it("无定子轭移除轭部且保留27个独立定子齿", () => { const components = partComponents("stator", "单定子双转子", INITIAL_PARAMETERS, "无定子轭"); expect(components).toHaveLength(27); expect(components.some((part) => part.id === "core-0")).toBe(false); expect(partComponents("stator", "单定子双转子", INITIAL_PARAMETERS, "有定子轭")).toHaveLength(28); });
+  it("其他结构不应用无定子轭选项", () => { expect(hasStatorYoke("双定子单转子", "无定子轭")).toBe(true); expect(hasStatorYoke("单定子单转子", "无定子轭")).toBe(true); });
+  it("27个线圈分为三相各9个并保持稳定身份", () => { const phases = Array.from({ length: 27 }, (_, index) => windingPhase(index)); expect(phases.filter((phase) => phase === "A")).toHaveLength(9); expect(phases.filter((phase) => phase === "B")).toHaveLength(9); expect(phases.filter((phase) => phase === "C")).toHaveLength(9); expect(partComponents("winding", "单定子双转子", INITIAL_PARAMETERS)[1]?.id).toBe("coil-0-1"); });
   it("单定子单转子具有一个定子一个转子", () => { const s = structureLayers("单定子单转子"); expect(s.stators).toHaveLength(1); expect(s.rotors).toHaveLength(1); });
   it("双定子单转子具有两个定子一个转子", () => { const s = structureLayers("双定子单转子"); expect(s.stators).toHaveLength(2); expect(s.rotors).toHaveLength(1); });
   it("单定子双转子具有一个定子两个转子", () => { const s = structureLayers("单定子双转子"); expect(s.stators).toHaveLength(1); expect(s.rotors).toHaveLength(2); });

@@ -168,7 +168,7 @@ function DimensionAnnotation({ parameter, parameters, structure, color }: { para
     <Html center position={labelPosition} style={{ pointerEvents: "none" }}><span role="status" aria-label="模型尺寸" className="whitespace-nowrap rounded border border-motor-annotation bg-card/95 px-2 py-1 text-[24px] font-medium text-motor-annotation">{radial ? "⌀ " : ""}{parameters[parameter]} mm</span></Html>
   </group>;
 }
-export default function MotorViewer(props: { parts: PartState; structure: StructureType; parameters: MotorParameters; showDirection: boolean; showMesh: boolean; dimension: keyof MotorParameters | null; selected: PartTarget | null; instances: InstanceState; select: (part: PartTarget) => void; hovered: PartTarget | null; hover: (target: PartTarget | null) => void }) {
+export default function MotorViewer(props: { parts: PartState; structure: StructureType; parameters: MotorParameters; showDirection: boolean; showMesh: boolean; dimension: keyof MotorParameters | null; selected: PartTarget | null; instances: InstanceState; select: (part: PartTarget) => void; clearSelection: () => void; hovered: PartTarget | null; hover: (target: PartTarget | null) => void }) {
   const controls = useRef<OrbitControlsImpl>(null);
   const [ready, setReady] = useState(false);
   const [materials, setMaterials] = useState<{ colors: Record<string, string>; texture: CanvasTexture } | null>(null);
@@ -183,7 +183,7 @@ export default function MotorViewer(props: { parts: PartState; structure: Struct
     setMaterials({ colors, texture }); return () => texture.dispose();
   }, []);
   return <div className="relative h-full min-h-[340px] w-full" data-scene-ready={ready ? "true" : undefined} data-structure={props.structure} data-mesh={props.showMesh} data-dimension={props.dimension ?? ""} data-hidden-count={Object.values(props.instances).filter((p) => p.visible === false).length}>
-    {materials && <Canvas frameloop="demand" dpr={[1, 1.5]} camera={{ position: [3.8, 3.2, 4.2], fov: 38 }} gl={{ alpha: true, antialias: true }}>
+    {materials && <Canvas onPointerMissed={(event) => { if (event.type === "click") props.clearSelection(); }} frameloop="demand" dpr={[1, 1.5]} camera={{ position: [3.8, 3.2, 4.2], fov: 38 }} gl={{ alpha: true, antialias: true }}>
       <ambientLight intensity={1.2} /><directionalLight position={[3, 7, 5]} intensity={3} />
       <Environment resolution={64}><Lightformer intensity={3} color={materials.colors.light} position={[0, 5, 0]} rotation-x={-Math.PI / 2} scale={[10, 10, 1]} /><Lightformer intensity={2} color={materials.colors.light} position={[-5, 1, -1]} rotation-y={Math.PI / 2} scale={[10, 4, 1]} /></Environment>
       <Assembly {...props} {...materials} />

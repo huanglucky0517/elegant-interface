@@ -6,7 +6,7 @@ import { DETAIL_GEOMETRY, STATOR_DETAILS, ROTOR_DETAILS, STRUCTURE_TYPES, type M
 export function LaminationParams({ parameters, structure, onStructure, onParameter, onDimension, onClose }: {
   parameters: MotorParameters; structure: StructureType; onStructure: (type: StructureType) => void;
   onParameter: (key: keyof MotorParameters, value: number) => void; onClose: () => void;
-  onDimension: (key: keyof MotorParameters) => void;
+  onDimension: (key: keyof MotorParameters | null) => void;
 }) {
   const [tab, setTab] = useState<"stator" | "rotor">("stator");
   const [details, setDetails] = useState<Record<string, string>>(() => Object.fromEntries([...STATOR_DETAILS, ...ROTOR_DETAILS].map((p) => [p.key, p.value])));
@@ -16,7 +16,7 @@ export function LaminationParams({ parameters, structure, onStructure, onParamet
     { key: "rotorOuter", label: "转子外径(mm)" }, { key: "rotorInner", label: "转子内径(mm)" }, { key: "gap", label: "气隙(mm)" },
   ];
   const list = tab === "stator" ? STATOR_DETAILS : ROTOR_DETAILS;
-  return <aside aria-label="指定冲片参数" className="flex h-full min-h-0 w-full flex-col overflow-hidden rounded-lg border border-border bg-card/95 shadow-[var(--shadow-card)]">
+  return <aside aria-label="指定冲片参数" onBlurCapture={() => onDimension(null)} className="flex h-full min-h-0 w-full flex-col overflow-hidden rounded-lg border border-border bg-card/95 shadow-[var(--shadow-card)]">
     <header className="flex shrink-0 items-center gap-2 px-3 py-3"><h2 className="flex-1 text-[13px] font-semibold">指定冲片</h2><span className="inline-flex items-center gap-1 text-[11px] text-primary"><CheckCircle2 className="h-3 w-3" />已覆盖</span><Button size="icon" variant="ghost" className="h-6 w-6" aria-label="关闭参数面板" onClick={onClose}><X /></Button></header>
     <div className="min-h-0 flex-1 overflow-y-auto pb-4">
       <div className="flex items-center gap-2 px-3 py-1.5"><label htmlFor="motor-structure" className="w-[104px] shrink-0 text-[12px] text-muted-foreground">结构类型</label><select id="motor-structure" aria-label="结构类型" value={structure} onChange={(e) => onStructure(e.target.value as StructureType)} className="h-8 min-w-0 flex-1 rounded border border-input bg-background p-1 text-[12px] outline-none focus:border-primary">{STRUCTURE_TYPES.map((s) => <option key={s}>{s}</option>)}</select></div>

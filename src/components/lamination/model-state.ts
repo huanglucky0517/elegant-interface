@@ -1,5 +1,12 @@
 export const STRUCTURE_TYPES = ["单定子单转子", "双定子单转子", "单定子双转子"] as const;
 export type StructureType = (typeof STRUCTURE_TYPES)[number];
+export const STATOR_YOKE_TYPES = ["有定子轭", "无定子轭"] as const;
+export type StatorYokeType = (typeof STATOR_YOKE_TYPES)[number];
+export function hasStatorYoke(structure: StructureType, type: StatorYokeType) {
+  return structure !== "单定子双转子" || type === "有定子轭";
+}
+export const WINDING_PHASES = ["A", "B", "C"] as const;
+export function windingPhase(index: number) { return WINDING_PHASES[((index % 3) + 3) % 3]; }
 export type PartKey = "rotor" | "stator" | "magnet" | "winding";
 export const PART_LABELS: Record<PartKey, string> = { rotor: "转子", stator: "定子", magnet: "磁钢", winding: "绕组" };
 export type PartState = Record<PartKey, { visible: boolean; opacity: number }>;
@@ -54,13 +61,13 @@ export function motorDimensions(p: MotorParameters) {
   const outerR = Math.max(0.2, p.rotorOuter * scale / 2);
   return { scale, outerS, outerR, innerS: Math.max(0.05, Math.min(outerS - 0.03, p.statorInner * scale / 2)), innerR: Math.max(0.05, Math.min(outerR - 0.03, p.rotorInner * scale / 2)), statorHeight: Math.max(0.03, p.statorHeight * scale), rotorHeight: Math.max(0.03, p.rotorHeight * scale) };
 }
-export function partComponents(key: PartKey, structure: StructureType, parameters: MotorParameters): PartComponent[] {
+export function partComponents(key: PartKey, structure: StructureType, parameters: MotorParameters, yokeType: StatorYokeType = "有定子轭"): PartComponent[] {
   const layers = structureLayers(structure);
   const slots = Math.min(72, Math.max(3, Math.round(parameters.slots)));
   const poles = Math.min(48, Math.max(2, Math.round(parameters.poles)));
   if (key === "rotor") return [...layers.rotors.map((_, i) => ({ id: `rotor-${i}`, label: `转子背铁 ${i + 1}` })), { id: "shaft", label: "转轴" }, { id: "hub", label: "轮毂" }];
-  if (key === "stator") return layers.stators.flatMap((_, i) => [{ id: `core-${i}`, label: `定子铁芯 ${i + 1}` }, ...Array.from({ length: slots }, (_, j) => ({ id: `tooth-${i}-${j}`, label: `定子 ${i + 1} · 齿 ${j + 1}` }))]);
-  if (key === "winding") return layers.stators.flatMap((_, i) => Array.from({ length: slots }, (_, j) => ({ id: `coil-${i}-${j}`, label: `定子 ${i + 1} · 线圈 ${j + 1}` })));
+  if (key === "stator") return layers.stators.flatMap((_, i) => [...(hasStatorYoke(structure, yokeType) ? [{ id: `core-${i}`, label: `定子轭 ${i + 1}` }] : []), ...Array.from({ length: slots }, (_, j) => ({ id: `tooth-${i}-${j}`, label: `定子 ${i + 1} · 齿 ${j + 1}` }))]);
+  if (key === "winding") return layers.stators.flatMap((_, i) => Array.from({ length: slots }, (_, j) => ({ id: `coil-${i}-${j}`, label: `定子 ${i + 1} · ${windingPhase(j)}相线圈 ${j + 1}` })));
   return layers.rotors.flatMap((_, i) => Array.from({ length: poles }, (_, j) => ({ id: `magnet-${i}-${j}`, label: `转子 ${i + 1} · 磁钢 ${j + 1}` })));
 }
 export function isPartHighlighted(hovered: PartTarget | null, key: PartKey, id: string): boolean {

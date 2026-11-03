@@ -4,3 +4,4 @@
 - Read motor material colors from semantic CSS tokens after mounting; keep generated surface textures local so the viewer has no external model or environment dependency.
 - Generate part-tree identities with pure partComponents rules and share them with model interaction groups; selection and hover use PartTarget and instance overrides use effectivePart so individual controls and geometry remain linked.
 - Use fixed physical scale from motorDimensions and shared numeric detail mappings for CAD annotations and geometry; diameter edits must not rescale unrelated parts. Mesh display is a visual triangulation overlay, not an analysis solver.
+- Share screen-oriented solid arrowheads between flux and dimension annotations so their direction remains legible during camera rotation.

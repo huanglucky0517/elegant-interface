@@ -69,6 +69,7 @@
   --color-motor-north: var(--motor-magnet-north);
   --color-motor-south: var(--motor-magnet-south);
   --color-motor-highlight: var(--motor-highlight);
+  --color-motor-annotation: var(--motor-annotation);
 }
 
 :root {
@@ -125,7 +126,8 @@
   --motor-magnet-north: #DC2626;
   --motor-magnet-south: #2563EB;
   --motor-highlight: #FE5101;
-  --motor-mesh: #5F5F5D;
+  --motor-mesh: #00A000;
+  --motor-annotation: #FF0000;
   --motor-sphere-sheen: radial-gradient(circle at 30% 25%, #ffffff 0%, #ffffff80 9%, transparent 40%);
   --motor-sphere-shade: radial-gradient(circle at 30% 25%, transparent 25%, #00000033 65%, #00000099 100%);
   --motor-sphere-shadow: inset -2px -3px 4px #00000040, 0 2px 3px #00000025;

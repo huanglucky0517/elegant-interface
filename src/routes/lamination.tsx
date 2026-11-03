@@ -92,15 +92,15 @@ function LaminationPage() {
         <div className="flex min-w-[860px] flex-1">
           <main className="lamination-grid relative min-w-0 flex-1 overflow-hidden bg-card">
             <div className="absolute inset-x-4 top-5 z-10 text-center text-[13px]">易泰达驱动电机冲片-副本（轴向磁通）</div>
-            <div className="absolute left-4 top-5 z-10 flex gap-2">
+            <div className={cn("absolute top-5 z-30 flex gap-2", paramsOpen ? "right-4" : "left-4")}>
               {!paramsOpen && <Button variant="outline" size="sm" onClick={() => setParamsOpen(true)}>指定冲片</Button>}
               {!partsOpen && <Button variant="outline" size="sm" onClick={() => setPartsOpen(true)}>三维零部件结构</Button>}
             </div>
             <div className={`h-full w-full pt-12 ${paramsOpen ? "pl-[280px]" : ""} ${partsOpen ? "pr-[256px]" : ""}`}>
               <MotorViewer parameters={parameters} structure={structure} parts={parts} showDirection={showDir} showMesh={showMesh} dimension={dimension} selected={selectedPart} instances={instances} hovered={hovered} hover={setHovered} select={(target) => { setSelectedPart(target); setPartsOpen(true); }} />
             </div>
-            {paramsOpen && <div className="absolute bottom-24 left-4 top-14 z-10 w-[264px]"><LaminationParams parameters={parameters} structure={structure} onStructure={setStructure} onDimension={setDimension} onParameter={(key, value) => { if (!Number.isFinite(value)) return; setParameters((p) => ({ ...p, [key]: value })); setDimension(key); }} onClose={() => { setParamsOpen(false); setDimension(null); }} /></div>}
-            <div className="absolute bottom-24 right-4 top-14 z-10 flex w-[236px] flex-col items-stretch gap-3 pointer-events-none">
+            {paramsOpen && <div className="absolute bottom-24 left-4 top-5 z-20 w-[264px]"><LaminationParams parameters={parameters} structure={structure} onStructure={setStructure} onDimension={setDimension} onParameter={(key, value) => { if (!Number.isFinite(value)) return; setParameters((p) => ({ ...p, [key]: value })); setDimension(key); }} onClose={() => { setParamsOpen(false); setDimension(null); }} /></div>}
+            <div className="absolute bottom-24 right-4 top-5 z-20 flex w-[236px] flex-col items-stretch gap-3 pointer-events-none">
               {partsOpen && <div className="pointer-events-auto flex min-h-0 flex-col"><PartsPanel parts={parts} selected={selectedPart ?? { key: "stator" }} structure={structure} parameters={parameters} onHover={setHovered} hovered={hovered} instances={instances} onSelect={setSelectedPart} onVisibility={(target, visible) => { const next = setTargetVisibility(parts, instances, target, visible); setParts(next.parts); setInstances(next.instances); }} onTransparency={(target, percent) => { const next = setTargetTransparency(parts, instances, target, percent); setParts(next.parts); setInstances(next.instances); }} onClose={() => { setPartsOpen(false); setHovered(null); setSelectedPart(null); }} /></div>}
               <div className="pointer-events-auto shrink-0 w-full rounded-md border border-border bg-card/95 px-3 py-2 shadow-[var(--shadow-card)]">
                 <label className="inline-flex items-center gap-2 text-[12px]"><input type="checkbox" checked={showDir} onChange={(e) => setShowDir(e.target.checked)} className="accent-primary" />显示充磁方向</label>

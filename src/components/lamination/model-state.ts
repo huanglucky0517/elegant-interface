@@ -21,12 +21,39 @@ export function setPartTransparency(parts: PartState, key: PartKey, percent: num
 export interface MotorParameters {
   poles: number; slots: number; statorOuter: number; statorInner: number;
   rotorOuter: number; rotorInner: number; gap: number;
+  statorHeight: number; rotorHeight: number; magnetOuter: number; magnetInner: number; backIron: number;
+  slotWidth: number; yokeHeight: number; openingWidth: number; openingHeight: number; shoulderHeight: number; bottomRadius: number; magnetSpacing: number; poleRatio: number;
 }
 export const INITIAL_PARAMETERS: MotorParameters = {
   poles: 8, slots: 27, statorOuter: 330, statorInner: 224, rotorOuter: 350, rotorInner: 200, gap: 0.7,
+  statorHeight: 40, rotorHeight: 15, magnetOuter: 330, magnetInner: 224, backIron: 7,
+  slotWidth: 18, yokeHeight: 10, openingWidth: 7, openingHeight: 2, shoulderHeight: 1, bottomRadius: 1, magnetSpacing: 1, poleRatio: 0.5,
 };
 export interface PartComponent { id: string; label: string }
 export interface PartTarget { key: PartKey; id?: string }
+export type InstanceState = Record<string, { visible?: boolean; opacity?: number }>;
+export const HIGHLIGHT_OPACITY = 0.4;
+export function effectivePart(parts: PartState, instances: InstanceState, target: PartTarget) {
+  const override = target.id ? instances[target.id] : undefined;
+  return { visible: parts[target.key].visible && override?.visible !== false, opacity: override?.opacity ?? parts[target.key].opacity };
+}
+export function setTargetVisibility(parts: PartState, instances: InstanceState, target: PartTarget, visible: boolean) {
+  return target.id ? { parts, instances: { ...instances, [target.id]: { ...instances[target.id], visible } } } : { parts: setPartVisibility(parts, target.key, visible), instances };
+}
+export function setTargetTransparency(parts: PartState, instances: InstanceState, target: PartTarget, percent: number) {
+  return target.id ? { parts, instances: { ...instances, [target.id]: { ...instances[target.id], opacity: 1 - Math.max(0, Math.min(100, percent)) / 100 } } } : { parts: setPartTransparency(parts, target.key, percent), instances };
+}
+export const DETAIL_GEOMETRY: Record<string, keyof MotorParameters> = {
+  toothOuter: "statorOuter", toothInner: "statorInner", statorHeight: "statorHeight", rotorHeight: "rotorHeight",
+  magnetOuter: "magnetOuter", magnetInner: "magnetInner", backIron: "backIron", slotWidth: "slotWidth", yokeHeight: "yokeHeight",
+  openingWidth: "openingWidth", openingHeight: "openingHeight", shoulderHeight: "shoulderHeight", bottomRadius: "bottomRadius", magnetSpacing: "magnetSpacing", poleRatio: "poleRatio",
+};
+export function motorDimensions(p: MotorParameters) {
+  const scale = 2.5 / INITIAL_PARAMETERS.rotorOuter;
+  const outerS = Math.max(0.2, p.statorOuter * scale / 2);
+  const outerR = Math.max(0.2, p.rotorOuter * scale / 2);
+  return { scale, outerS, outerR, innerS: Math.max(0.05, Math.min(outerS - 0.03, p.statorInner * scale / 2)), innerR: Math.max(0.05, Math.min(outerR - 0.03, p.rotorInner * scale / 2)), statorHeight: Math.max(0.03, p.statorHeight * scale), rotorHeight: Math.max(0.03, p.rotorHeight * scale) };
+}
 export function partComponents(key: PartKey, structure: StructureType, parameters: MotorParameters): PartComponent[] {
   const layers = structureLayers(structure);
   const slots = Math.min(72, Math.max(3, Math.round(parameters.slots)));

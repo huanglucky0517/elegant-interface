@@ -92,7 +92,7 @@ function LaminationPage() {
         <div className="flex min-w-[860px] flex-1">
           <main className="lamination-grid relative min-w-0 flex-1 overflow-hidden bg-card">
             <div className="absolute inset-x-4 top-5 z-10 text-center text-[13px]">易泰达驱动电机冲片-副本（轴向磁通）</div>
-            <div className="absolute left-4 top-5 z-10 flex gap-2">
+            <div className={cn("absolute top-5 z-30 flex gap-2", paramsOpen ? "right-4" : "left-4")}>
               {!paramsOpen && <Button variant="outline" size="sm" onClick={() => setParamsOpen(true)}>指定冲片</Button>}
               {!partsOpen && <Button variant="outline" size="sm" onClick={() => setPartsOpen(true)}>三维零部件结构</Button>}
             </div>

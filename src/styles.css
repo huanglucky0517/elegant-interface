@@ -112,6 +112,13 @@
   --sidebar-accent-foreground: oklch(0.208 0.042 265.755);
   --sidebar-border: oklch(0.929 0.013 255.508);
   --sidebar-ring: oklch(0.704 0.04 256.788);
+  --motor-steel: #89969e;
+  --motor-tooth: #b5bfc6;
+  --motor-copper: #c58042;
+  --motor-magnet-north: #c84f62;
+  --motor-magnet-south: #507cad;
+  --motor-shaft: #ced6dc;
+  --motor-light: #ffffff;
 }
 
 .dark {
@@ -191,4 +198,9 @@
   *::-webkit-scrollbar-corner {
     background: transparent;
   }
+}
+
+.lamination-grid {
+  background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px);
+  background-size: 24px 24px;
 }

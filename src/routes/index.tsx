@@ -22,6 +22,10 @@ export const Route = createFileRoute("/")({
     meta: [
       { title: "分析流程模板 — 数智工程师" },
       { name: "description", content: "永磁同步电机分析流程模板库与参数配置工作台。" },
+      { property: "og:title", content: "分析流程模板 — 数智工程师" },
+      { property: "og:description", content: "永磁同步电机分析流程模板库与参数配置工作台。" },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: WorkspacePage,

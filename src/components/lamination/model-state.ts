@@ -1,0 +1,54 @@
+export const STRUCTURE_TYPES = ["单定子单转子", "双定子单转子", "单定子双转子"] as const;
+export type StructureType = (typeof STRUCTURE_TYPES)[number];
+export type PartKey = "rotor" | "stator" | "magnet" | "winding";
+export const PART_LABELS: Record<PartKey, string> = { rotor: "转子", stator: "定子", magnet: "磁钢", winding: "绕组" };
+export type PartState = Record<PartKey, { visible: boolean; opacity: number }>;
+export const INITIAL_PARTS: PartState = {
+  rotor: { visible: true, opacity: 1 }, stator: { visible: true, opacity: 1 },
+  magnet: { visible: true, opacity: 1 }, winding: { visible: true, opacity: 1 },
+};
+export function structureLayers(type: StructureType) {
+  if (type === "双定子单转子") return { stators: [-1, 1], rotors: [0] };
+  if (type === "单定子双转子") return { stators: [0], rotors: [-1, 1] };
+  return { stators: [0.5], rotors: [-0.5] };
+}
+export function setPartVisibility(parts: PartState, key: PartKey, visible: boolean): PartState {
+  return { ...parts, [key]: { ...parts[key], visible } };
+}
+export function setPartTransparency(parts: PartState, key: PartKey, percent: number): PartState {
+  return { ...parts, [key]: { ...parts[key], opacity: 1 - Math.max(0, Math.min(100, percent)) / 100 } };
+}
+export interface MotorParameters {
+  poles: number; slots: number; statorOuter: number; statorInner: number;
+  rotorOuter: number; rotorInner: number; gap: number;
+}
+export const INITIAL_PARAMETERS: MotorParameters = {
+  poles: 8, slots: 27, statorOuter: 330, statorInner: 224, rotorOuter: 350, rotorInner: 200, gap: 0.7,
+};
+export interface DetailParameter { key: string; label: string; value: string; options?: string[]; section: string }
+export const STATOR_DETAILS: DetailParameter[] = [
+  { key: "toothOuter", label: "齿顶外径(mm)", value: "330", section: "冲片" },
+  { key: "toothInner", label: "齿顶内径(mm)", value: "224", section: "冲片" },
+  { key: "statorHeight", label: "定子高度(mm)", value: "40", section: "冲片" },
+  { key: "coreMaterial", label: "铁芯材料", value: "B35A230", section: "冲片" },
+  { key: "slotWidth", label: "槽宽(mm)", value: "18", section: "槽" },
+  { key: "yokeHeight", label: "轭部高度(mm)", value: "10", section: "槽" },
+  { key: "openingWidth", label: "槽口宽度(mm)", value: "7", section: "槽" },
+  { key: "openingHeight", label: "槽口高度(mm)", value: "2", section: "槽" },
+  { key: "shoulderHeight", label: "槽肩高度(mm)", value: "1", section: "槽" },
+  { key: "bottomType", label: "槽底类型", value: "平底", options: ["平底", "圆底"], section: "槽" },
+  { key: "bottomRadius", label: "槽底圆角半径(mm)", value: "1", section: "槽" },
+];
+export const ROTOR_DETAILS: DetailParameter[] = [
+  { key: "rotorHeight", label: "转子高度(mm)", value: "15", section: "冲片" },
+  { key: "magnetShape", label: "磁钢形状", value: "Halbach阵列磁钢", options: ["Halbach阵列磁钢", "扇形磁钢", "矩形磁钢"], section: "冲片" },
+  { key: "rotorMaterial", label: "转子背铁材料", value: "B35A230", section: "冲片" },
+  { key: "magnetMaterial", label: "磁钢材料", value: "N42SH", section: "冲片" },
+  { key: "magnetOuter", label: "磁钢外径(mm)", value: "330", section: "磁钢" },
+  { key: "magnetInner", label: "磁钢内径(mm)", value: "224", section: "磁钢" },
+  { key: "backIron", label: "背铁厚度(mm)", value: "7", section: "磁钢" },
+  { key: "innerShape", label: "内边界形状", value: "圆弧", options: ["圆弧", "直线"], section: "磁钢" },
+  { key: "spacingShape", label: "磁钢间隙形状", value: "平行", options: ["平行", "径向"], section: "磁钢" },
+  { key: "magnetSpacing", label: "磁钢间距(mm)", value: "1", section: "磁钢" },
+  { key: "poleRatio", label: "轴向磁钢周比", value: "0.5", section: "磁钢" },
+];

@@ -1,11 +1,11 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Environment, Lightformer, OrbitControls } from "@react-three/drei";
-import { CanvasTexture, DoubleSide, ExtrudeGeometry, Path, Shape, SRGBColorSpace } from "three";
+import { CanvasTexture, DoubleSide, ExtrudeGeometry, Group, Mesh, MeshStandardMaterial, Path, Shape, SRGBColorSpace } from "three";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import { RotateCcw, Minus, Plus, Box } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { structureLayers, type MotorParameters, type PartKey, type PartState, type StructureType } from "./model-state";
+import { isPartHighlighted, structureLayers, type PartTarget, type MotorParameters, type PartKey, type PartState, type StructureType } from "./model-state";
 
 function sectorGeometry(inner: number, outer: number, height: number, angle = Math.PI * 2) {
   const shape = new Shape();
@@ -25,9 +25,28 @@ function AnnularPart({ inner, outer, height, angle, color, opacity, y, rotation 
 }) {
   const geometry = useMemo(() => sectorGeometry(inner, outer, height, angle), [inner, outer, height, angle]);
   useEffect(() => () => geometry.dispose(), [geometry]);
-  return <mesh geometry={geometry} position={[0, y, 0]} rotation={[0, rotation, 0]} onClick={(e) => { e.stopPropagation(); onClick?.(); }}>
+  return <mesh geometry={geometry} position={[0, y, 0]} rotation={[0, rotation, 0]}>
     <meshStandardMaterial color={color} map={texture} metalness={0.72} roughness={0.34} transparent={opacity < 1} opacity={opacity} depthWrite={opacity >= 1} side={DoubleSide} />
   </mesh>;
+}
+function InteractivePart({ target, hovered, hover, select, highlight, children }: {
+  target: PartTarget; hovered: PartTarget | null; hover: (target: PartTarget | null) => void;
+  select: (key: PartKey) => void; highlight: string; children: ReactNode;
+}) {
+  const group = useRef<Group>(null);
+  const { invalidate } = useThree();
+  const active = isPartHighlighted(hovered, target.key, target.id ?? "");
+  useEffect(() => {
+    group.current?.traverse((object) => {
+      if (!(object instanceof Mesh)) return;
+      const materials = Array.isArray(object.material) ? object.material : [object.material];
+      materials.forEach((material) => {
+        if (material instanceof MeshStandardMaterial) { material.emissive.set(highlight); material.emissiveIntensity = active ? 0.55 : 0; }
+      });
+    });
+    invalidate();
+  }, [active, highlight, children, invalidate]);
+  return <group ref={group} onClick={(event) => { event.stopPropagation(); if (event.delta <= 4) select(target.key); }} onPointerOver={(event) => { event.stopPropagation(); hover(target); }} onPointerOut={(event) => { event.stopPropagation(); hover(null); }}>{children}</group>;
 }
 function ReadySignal({ onReady }: { onReady: () => void }) {
   const ready = useRef(false);
@@ -42,9 +61,10 @@ function FitCamera() {
   }, [camera, size.width, size.height, invalidate]);
   return null;
 }
-function Assembly({ parts, structure, parameters, showDirection, colors, texture, select }: {
+function Assembly({ parts, structure, parameters, showDirection, colors, texture, select, hovered, hover }: {
   parts: PartState; structure: StructureType; parameters: MotorParameters; showDirection: boolean;
   colors: Record<string, string>; texture: CanvasTexture; select: (part: PartKey) => void;
+  hovered: PartTarget | null; hover: (target: PartTarget | null) => void;
 }) {
   const layers = structureLayers(structure);
   const scale = 2.5 / Math.max(parameters.statorOuter, parameters.rotorOuter, 1);
@@ -55,43 +75,44 @@ function Assembly({ parts, structure, parameters, showDirection, colors, texture
   const slots = Math.min(72, Math.max(3, Math.round(parameters.slots)));
   const poles = Math.min(48, Math.max(2, Math.round(parameters.poles)));
   const spacing = 0.42 + Math.max(0, parameters.gap) * scale;
+  const part = (key: PartKey, id: string, children: ReactNode) => <InteractivePart key={id} target={{ key, id }} hovered={hovered} hover={hover} select={select} highlight={colors.highlight}>{children}</InteractivePart>;
   return <group rotation={[0.12, 0.35, 0]}>
     {layers.stators.map((layer, index) => <group key={`stator-${index}`}>
       {parts.stator.visible && <group>
-        <AnnularPart inner={innerS} outer={outerS} height={0.14} y={layer * spacing} color={colors.steel} opacity={parts.stator.opacity} texture={texture} onClick={() => select("stator")} />
-        {Array.from({ length: slots }, (_, i) => <AnnularPart key={i} inner={innerS + 0.02} outer={outerS - 0.02} height={0.30} angle={Math.PI * 2 / slots * 0.43} rotation={i * Math.PI * 2 / slots} y={layer * spacing} color={colors.tooth} opacity={parts.stator.opacity} texture={texture} onClick={() => select("stator")} />)}
+        {part("stator", `core-${index}`, <AnnularPart inner={innerS} outer={outerS} height={0.14} y={layer * spacing} color={colors.steel} opacity={parts.stator.opacity} texture={texture} />)}
+        {Array.from({ length: slots }, (_, i) => part("stator", `tooth-${index}-${i}`, <AnnularPart inner={innerS + 0.02} outer={outerS - 0.02} height={0.30} angle={Math.PI * 2 / slots * 0.43} rotation={i * Math.PI * 2 / slots} y={layer * spacing} color={colors.tooth} opacity={parts.stator.opacity} texture={texture} />))}
       </group>}
-      {parts.winding.visible && Array.from({ length: slots }, (_, i) => <group key={i} rotation={[0, (i + 0.47) * Math.PI * 2 / slots, 0]}>
+      {parts.winding.visible && Array.from({ length: slots }, (_, i) => part("winding", `coil-${index}-${i}`, <group rotation={[0, (i + 0.47) * Math.PI * 2 / slots, 0]}>
         {Array.from({ length: 5 }, (_, j) => <AnnularPart key={j} inner={innerS + 0.055 + j * 0.008} outer={outerS - 0.055 - j * 0.008} height={0.043} angle={Math.PI * 2 / slots * 0.44} y={layer * spacing - 0.13 + j * 0.065} color={colors.copper} opacity={parts.winding.opacity} onClick={() => select("winding")} />)}
-      </group>)}
+      </group>))}
     </group>)}
     {layers.rotors.map((layer, index) => <group key={`rotor-${index}`}>
-      {parts.rotor.visible && <AnnularPart inner={innerR} outer={outerR} height={0.14} y={layer * spacing} color={colors.steel} opacity={parts.rotor.opacity} texture={texture} onClick={() => select("rotor")} />}
-      {parts.magnet.visible && Array.from({ length: poles }, (_, i) => <group key={i}>
-        <AnnularPart inner={Math.max(innerR + 0.06, innerS)} outer={Math.min(outerR - 0.08, outerS)} height={0.09} angle={Math.PI * 2 / poles * 0.88} rotation={i * Math.PI * 2 / poles} y={layer * spacing + (layer > 0 ? -0.13 : 0.13)} color={i % 2 ? colors.south : colors.north} opacity={parts.magnet.opacity} onClick={() => select("magnet")} />
+      {parts.rotor.visible && part("rotor", `rotor-${index}`, <AnnularPart inner={innerR} outer={outerR} height={0.14} y={layer * spacing} color={colors.steel} opacity={parts.rotor.opacity} texture={texture} />)}
+      {parts.magnet.visible && Array.from({ length: poles }, (_, i) => part("magnet", `magnet-${index}-${i}`, <group>
+        <AnnularPart inner={Math.max(innerR + 0.06, innerS)} outer={Math.min(outerR - 0.08, outerS)} height={0.09} angle={Math.PI * 2 / poles * 0.88} rotation={i * Math.PI * 2 / poles} y={layer * spacing + (layer > 0 ? -0.13 : 0.13)} color={colors.magnet} opacity={parts.magnet.opacity} />
         {showDirection && <group position={[Math.cos(-(i + 0.44) * Math.PI * 2 / poles) * (innerS + outerS) / 2, layer * spacing + 0.23, Math.sin(-(i + 0.44) * Math.PI * 2 / poles) * (innerS + outerS) / 2]} rotation={[i % 2 ? Math.PI : 0, 0, 0]}>
-          <mesh><cylinderGeometry args={[0.012, 0.012, 0.16, 8]} /><meshBasicMaterial color={colors.light} /></mesh>
-          <mesh position={[0, 0.1, 0]}><coneGeometry args={[0.035, 0.07, 12]} /><meshBasicMaterial color={colors.light} /></mesh>
+          <mesh><cylinderGeometry args={[0.018, 0.018, 0.25, 8]} /><meshBasicMaterial color={i % 2 ? colors.south : colors.north} toneMapped={false} /></mesh>
+          <mesh position={[0, 0.16, 0]}><coneGeometry args={[0.055, 0.10, 12]} /><meshBasicMaterial color={i % 2 ? colors.south : colors.north} toneMapped={false} /></mesh>
         </group>}
-      </group>)}
+      </group>))}
     </group>)}
-    {parts.rotor.visible && <group onClick={(e) => { e.stopPropagation(); select("rotor"); }}>
-      <mesh><cylinderGeometry args={[0.18, 0.18, 1.6, 48]} /><meshStandardMaterial color={colors.shaft} metalness={0.85} roughness={0.23} transparent={parts.rotor.opacity < 1} opacity={parts.rotor.opacity} depthWrite={parts.rotor.opacity >= 1} /></mesh>
-      <mesh><cylinderGeometry args={[0.36, 0.36, 0.65, 48]} /><meshStandardMaterial color={colors.steel} metalness={0.75} roughness={0.32} transparent={parts.rotor.opacity < 1} opacity={parts.rotor.opacity} depthWrite={parts.rotor.opacity >= 1} /></mesh>
+    {parts.rotor.visible && <group>
+      {part("rotor", "shaft", <mesh><cylinderGeometry args={[0.18, 0.18, 1.6, 48]} /><meshStandardMaterial color={colors.steel} metalness={0.85} roughness={0.23} transparent={parts.rotor.opacity < 1} opacity={parts.rotor.opacity} depthWrite={parts.rotor.opacity >= 1} /></mesh>)}
+      {part("rotor", "hub", <mesh><cylinderGeometry args={[0.36, 0.36, 0.65, 48]} /><meshStandardMaterial color={colors.steel} metalness={0.75} roughness={0.32} transparent={parts.rotor.opacity < 1} opacity={parts.rotor.opacity} depthWrite={parts.rotor.opacity >= 1} /></mesh>)}
     </group>}
   </group>;
 }
-export default function MotorViewer(props: { parts: PartState; structure: StructureType; parameters: MotorParameters; showDirection: boolean; select: (part: PartKey) => void }) {
+export default function MotorViewer(props: { parts: PartState; structure: StructureType; parameters: MotorParameters; showDirection: boolean; select: (part: PartKey) => void; hovered: PartTarget | null; hover: (target: PartTarget | null) => void }) {
   const controls = useRef<OrbitControlsImpl>(null);
   const [ready, setReady] = useState(false);
   const [materials, setMaterials] = useState<{ colors: Record<string, string>; texture: CanvasTexture } | null>(null);
   useEffect(() => {
     const css = getComputedStyle(document.documentElement);
-    const colors = Object.fromEntries(["steel", "tooth", "copper", "shaft", "light"].map((k) => [k, css.getPropertyValue(`--motor-${k}`).trim()]));
+    const colors = Object.fromEntries(["steel", "tooth", "copper", "shaft", "light", "magnet", "highlight"].map((k) => [k, css.getPropertyValue(`--motor-${k}`).trim()]));
     colors.north = css.getPropertyValue("--motor-magnet-north").trim(); colors.south = css.getPropertyValue("--motor-magnet-south").trim();
     const canvas = document.createElement("canvas"); canvas.width = 128; canvas.height = 128;
     const ctx = canvas.getContext("2d");
-    if (ctx) { ctx.fillStyle = colors.tooth; ctx.fillRect(0, 0, 128, 128); ctx.strokeStyle = colors.steel; ctx.lineWidth = 0.5; for (let i = 0; i < 128; i += 3) { ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(128, i); ctx.stroke(); } }
+    if (ctx) { ctx.fillStyle = colors.light; ctx.fillRect(0, 0, 128, 128); ctx.strokeStyle = colors.steel; ctx.globalAlpha = 0.25; ctx.lineWidth = 0.5; for (let i = 0; i < 128; i += 3) { ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(128, i); ctx.stroke(); } }
     const texture = new CanvasTexture(canvas); texture.colorSpace = SRGBColorSpace;
     setMaterials({ colors, texture }); return () => texture.dispose();
   }, []);

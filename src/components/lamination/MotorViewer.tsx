@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Environment, Lightformer, OrbitControls, Line, Html } from "@react-three/drei";
-import { CanvasTexture, DoubleSide, ExtrudeGeometry, Group, Mesh, MeshStandardMaterial, Path, Shape, SRGBColorSpace, EdgesGeometry, WireframeGeometry, LineBasicMaterial, LineSegments } from "three";
+import { CanvasTexture, DoubleSide, ExtrudeGeometry, Group, Mesh, MeshStandardMaterial, Path, Shape, SRGBColorSpace, EdgesGeometry, WireframeGeometry, LineBasicMaterial, LineSegments, Vector3 } from "three";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import { RotateCcw, Minus, Plus, Box } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -85,6 +85,21 @@ function FitCamera() {
   }, [camera, size.width, size.height, invalidate]);
   return null;
 }
+function AnnotationArrow({ tip, from }: { tip: [number, number, number]; from: [number, number, number] }) {
+  const group = useRef<Group>(null);
+  const arrow = useRef<SVGSVGElement>(null);
+  const { camera, size } = useThree();
+  const vectors = useMemo(() => ({ tip: new Vector3(), from: new Vector3() }), []);
+  useFrame(() => {
+    if (!group.current || !arrow.current) return;
+    vectors.tip.set(...tip); vectors.from.set(...from);
+    group.current.localToWorld(vectors.tip).project(camera);
+    group.current.localToWorld(vectors.from).project(camera);
+    const angle = Math.atan2(-(vectors.tip.y - vectors.from.y) * size.height, (vectors.tip.x - vectors.from.x) * size.width);
+    arrow.current.style.transform = `rotate(${angle}rad)`;
+  });
+  return <group ref={group}><Html center position={tip} style={{ pointerEvents: "none" }}><svg ref={arrow} width="16" height="14" viewBox="-16 -7 16 14" className="overflow-visible fill-motor-annotation" style={{ transformOrigin: "100% 50%", marginLeft: -16 }} aria-hidden="true"><path d="M 0 0 L -16 -7 L -16 7 Z" /></svg></Html></group>;
+}
 function Assembly({ parts, structure, parameters, showDirection, showMesh, dimension, selected, instances, colors, texture, select, hovered, hover }: {
   parts: PartState; structure: StructureType; parameters: MotorParameters; showDirection: boolean;
   colors: Record<string, string>; texture: CanvasTexture; select: (part: PartTarget) => void;
@@ -119,9 +134,11 @@ function Assembly({ parts, structure, parameters, showDirection, showMesh, dimen
       const angle = -(i + 0.44) * Math.PI * 2 / poles;
       const x = Math.cos(angle) * radius, z = Math.sin(angle) * radius;
       const extent = Math.max(...layers.rotors.map(Math.abs), ...layers.stators.map(Math.abs)) * spacing + statorHeight + 0.35;
-      return <Line key={`flux-${i}`} points={[[x, -extent, z], [x, extent, z]]} color={i % 2 ? colors.south : colors.north} lineWidth={1} dashed dashSize={0.045} gapSize={0.03} depthTest={false} toneMapped={false} />;
+      const start: [number, number, number] = [x, i % 2 ? extent : -extent, z];
+      const end: [number, number, number] = [x, i % 2 ? -extent : extent, z];
+      return <group key={`flux-${i}`}><Line points={[start, end]} color={colors.annotation} lineWidth={2} dashed dashSize={0.045} gapSize={0.03} depthTest={false} toneMapped={false} /><AnnotationArrow tip={end} from={start} /></group>;
     })}
-    {dimension && <DimensionAnnotation parameter={dimension} parameters={parameters} structure={structure} color={colors.highlight} />}
+    {dimension && <DimensionAnnotation parameter={dimension} parameters={parameters} structure={structure} color={colors.annotation} />}
     {parts.rotor.visible && <group>
       {part("rotor", "shaft", <mesh><cylinderGeometry args={[0.18, 0.18, Math.max(0.7, spacing * 2 + statorHeight + 0.2), 48]} /><meshStandardMaterial color={colors.steel} metalness={0.85} roughness={0.23} transparent={parts.rotor.opacity < 1} opacity={parts.rotor.opacity} depthWrite={parts.rotor.opacity >= 1} /></mesh>)}
       {part("rotor", "hub", <mesh><cylinderGeometry args={[0.36, 0.36, Math.max(0.2, spacing * 2 - rotorHeight), 48]} /><meshStandardMaterial color={colors.steel} metalness={0.75} roughness={0.32} transparent={parts.rotor.opacity < 1} opacity={parts.rotor.opacity} depthWrite={parts.rotor.opacity >= 1} /></mesh>)}
@@ -144,9 +161,9 @@ function DimensionAnnotation({ parameter, parameters, structure, color }: { para
   const points: [number, number, number][] = radial ? [[-radius, y, 0], [radius, y, 0]] : [[offset, y - length / 2, 0], [offset, y + length / 2, 0]];
   const labelPosition: [number, number, number] = radial ? [0, y + 0.06, 0] : [offset + 0.08, y, 0];
   return <group>
-    <Line points={points} color={color} lineWidth={1} depthTest={false} toneMapped={false} />
-    {points.map((p, i) => <Line key={i} points={radial ? [[p[0], p[1], -0.06], [p[0], p[1], 0.06]] : [[p[0] - 0.06, p[1], 0], [p[0] + 0.06, p[1], 0]]} color={color} lineWidth={1} depthTest={false} toneMapped={false} />)}
-    <Html center position={labelPosition} style={{ pointerEvents: "none" }}><span role="status" aria-label="模型尺寸" className="whitespace-nowrap rounded border border-motor-highlight bg-card/95 px-2 py-1 text-[11px] font-medium text-motor-highlight">{radial ? "⌀ " : ""}{parameters[parameter]} mm</span></Html>
+    <Line points={points} color={color} lineWidth={2} depthTest={false} toneMapped={false} />
+    {points.map((p, i) => <group key={i}><Line points={radial ? [[p[0], p[1], -0.06], [p[0], p[1], 0.06]] : [[p[0] - 0.06, p[1], 0], [p[0] + 0.06, p[1], 0]]} color={color} lineWidth={2} depthTest={false} toneMapped={false} /><AnnotationArrow tip={p} from={points[i === 0 ? 1 : 0]} /></group>)}
+    <Html center position={labelPosition} style={{ pointerEvents: "none" }}><span role="status" aria-label="模型尺寸" className="whitespace-nowrap rounded border border-motor-annotation bg-card/95 px-2 py-1 text-[24px] font-medium text-motor-annotation">{radial ? "⌀ " : ""}{parameters[parameter]} mm</span></Html>
   </group>;
 }
 export default function MotorViewer(props: { parts: PartState; structure: StructureType; parameters: MotorParameters; showDirection: boolean; showMesh: boolean; dimension: keyof MotorParameters | null; selected: PartTarget | null; instances: InstanceState; select: (part: PartTarget) => void; hovered: PartTarget | null; hover: (target: PartTarget | null) => void }) {
@@ -155,7 +172,7 @@ export default function MotorViewer(props: { parts: PartState; structure: Struct
   const [materials, setMaterials] = useState<{ colors: Record<string, string>; texture: CanvasTexture } | null>(null);
   useEffect(() => {
     const css = getComputedStyle(document.documentElement);
-    const colors = Object.fromEntries(["steel", "tooth", "copper", "shaft", "light", "magnet", "highlight", "mesh"].map((k) => [k, css.getPropertyValue(`--motor-${k}`).trim()]));
+    const colors = Object.fromEntries(["steel", "tooth", "copper", "shaft", "light", "magnet", "highlight", "mesh", "annotation"].map((k) => [k, css.getPropertyValue(`--motor-${k}`).trim()]));
     colors.north = css.getPropertyValue("--motor-magnet-north").trim(); colors.south = css.getPropertyValue("--motor-magnet-south").trim();
     const canvas = document.createElement("canvas"); canvas.width = 128; canvas.height = 128;
     const ctx = canvas.getContext("2d");

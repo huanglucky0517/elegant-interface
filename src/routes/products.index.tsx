@@ -21,6 +21,10 @@ export const Route = createFileRoute("/products/")({
     meta: [
       { title: "产品库 — 数智工程师" },
       { name: "description", content: "电机设计产品库,查看设计成功、失败、进行中的产品记录。" },
+      { property: "og:title", content: "产品库 — 数智工程师" },
+      { property: "og:description", content: "查看电机设计产品与最终匹配方案记录。" },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: ProductsPage,

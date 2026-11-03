@@ -19,6 +19,8 @@ export const Route = createFileRoute("/products/design")({
       { name: "description", content: "选择应用领域与电机类型，设置工况参数并匹配已有电机产品。" },
       { property: "og:title", content: "新建产品设计 — 数智工程师" },
       { property: "og:description", content: "应用领域参数设置、指标转换与产品匹配流程。" },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: DesignPage,

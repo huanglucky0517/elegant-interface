@@ -9,19 +9,25 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as ProductsRouteImport } from './routes/products'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as LaminationRouteImport } from './routes/lamination'
+import { Route as ProductsRouteImport } from './routes/products'
 import { Route as ProductsIndexRouteImport } from './routes/products.index'
 import { Route as ProductsDesignRouteImport } from './routes/products.design'
 
-const ProductsRoute = ProductsRouteImport.update({
-  id: '/products',
-  path: '/products',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LaminationRoute = LaminationRouteImport.update({
+  id: '/lamination',
+  path: '/lamination',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProductsRoute = ProductsRouteImport.update({
+  id: '/products',
+  path: '/products',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProductsIndexRoute = ProductsIndexRouteImport.update({
@@ -37,49 +43,67 @@ const ProductsDesignRoute = ProductsDesignRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/lamination': typeof LaminationRoute
   '/products': typeof ProductsRouteWithChildren
   '/products/design': typeof ProductsDesignRoute
   '/products/': typeof ProductsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/lamination': typeof LaminationRoute
   '/products/design': typeof ProductsDesignRoute
   '/products': typeof ProductsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/lamination': typeof LaminationRoute
   '/products': typeof ProductsRouteWithChildren
   '/products/design': typeof ProductsDesignRoute
   '/products/': typeof ProductsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/products' | '/products/design' | '/products/'
+  fullPaths:
+    '/' | '/lamination' | '/products' | '/products/design' | '/products/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/products/design' | '/products'
-  id: '__root__' | '/' | '/products' | '/products/design' | '/products/'
+  to: '/' | '/lamination' | '/products/design' | '/products'
+  id:
+    | '__root__'
+    | '/'
+    | '/lamination'
+    | '/products'
+    | '/products/design'
+    | '/products/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  LaminationRoute: typeof LaminationRoute
   ProductsRoute: typeof ProductsRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/products': {
-      id: '/products'
-      path: '/products'
-      fullPath: '/products'
-      preLoaderRoute: typeof ProductsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/': {
       id: '/'
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lamination': {
+      id: '/lamination'
+      path: '/lamination'
+      fullPath: '/lamination'
+      preLoaderRoute: typeof LaminationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/products': {
+      id: '/products'
+      path: '/products'
+      fullPath: '/products'
+      preLoaderRoute: typeof ProductsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/products/': {
@@ -115,6 +139,7 @@ const ProductsRouteWithChildren = ProductsRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  LaminationRoute: LaminationRoute,
   ProductsRoute: ProductsRouteWithChildren,
 }
 export const routeTree = rootRouteImport

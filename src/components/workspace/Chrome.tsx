@@ -101,27 +101,33 @@ export function LeftNav() {
       <div className="space-y-0.5">
         {items
           .filter((i) => !i.group)
-          .map((i) => (
-            <button
-              key={i.label}
-              className={cn(
-                "flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-left text-[13px] transition-colors",
-                i.active
-                  ? "bg-primary-soft text-primary font-medium"
-                  : "text-foreground/70 hover:bg-card hover:text-foreground",
-              )}
-            >
-              <span
-                className={cn(
-                  "text-[14px]",
-                  i.active ? "text-primary" : "text-muted-foreground",
-                )}
+          .map((i) => {
+            const to = i.label === "指定冲片" ? "/lamination" : i.label === "初始方案" ? "/" : undefined;
+            const cls = "flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-left text-[13px] transition-colors";
+            const inactive = "text-foreground/70 hover:bg-card hover:text-foreground";
+            const inner = (
+              <>
+                <span className="text-[14px]">{i.icon}</span>
+                {i.label}
+              </>
+            );
+            return to ? (
+              <Link
+                key={i.label}
+                to={to}
+                className={cls}
+                activeOptions={{ exact: true }}
+                activeProps={{ className: "bg-primary-soft text-primary font-medium" }}
+                inactiveProps={{ className: inactive }}
               >
-                {i.icon}
-              </span>
-              {i.label}
-            </button>
-          ))}
+                {inner}
+              </Link>
+            ) : (
+              <button key={i.label} className={cn(cls, inactive)}>
+                {inner}
+              </button>
+            );
+          })}
       </div>
     </aside>
   );

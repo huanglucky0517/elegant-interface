@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Canvas, useFrame } from "@react-three/fiber";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Environment, Lightformer, OrbitControls } from "@react-three/drei";
 import { CanvasTexture, DoubleSide, ExtrudeGeometry, Path, Shape, SRGBColorSpace } from "three";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
@@ -32,6 +32,14 @@ function AnnularPart({ inner, outer, height, angle, color, opacity, y, rotation 
 function ReadySignal({ onReady }: { onReady: () => void }) {
   const ready = useRef(false);
   useFrame(() => { if (!ready.current) { ready.current = true; onReady(); } });
+  return null;
+}
+function FitCamera() {
+  const { camera, size, invalidate } = useThree();
+  useEffect(() => {
+    camera.zoom = Math.min(1, size.width / Math.max(size.height, 1) / 0.9);
+    camera.updateProjectionMatrix(); invalidate();
+  }, [camera, size.width, size.height, invalidate]);
   return null;
 }
 function Assembly({ parts, structure, parameters, showDirection, colors, texture, select }: {
@@ -93,6 +101,7 @@ export default function MotorViewer(props: { parts: PartState; structure: Struct
       <Environment resolution={64}><Lightformer intensity={3} color={materials.colors.light} position={[0, 5, 0]} rotation-x={-Math.PI / 2} scale={[10, 10, 1]} /><Lightformer intensity={2} color={materials.colors.light} position={[-5, 1, -1]} rotation-y={Math.PI / 2} scale={[10, 4, 1]} /></Environment>
       <Assembly {...props} {...materials} />
       <OrbitControls ref={controls} makeDefault enableDamping={false} minDistance={5} maxDistance={18} />
+      <FitCamera />
       <ReadySignal onReady={() => setReady(true)} />
     </Canvas>}
     <div className="absolute bottom-5 left-1/2 flex -translate-x-1/2 items-center gap-1 rounded-lg border border-border bg-card/95 p-1 shadow-[var(--shadow-card)]">

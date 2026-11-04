@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { CheckCircle2, ChevronDown, X, Zap, Thermometer, Activity, Volume2, FileText, GitBranch, Image as ImageIcon, Table2, Check } from "lucide-react";
 import { LeftNav, TopBar } from "@/components/workspace/Chrome";
@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import MotorViewer from "@/components/lamination/MotorViewer";
 import { PartsPanel } from "@/components/lamination/PartsPanel";
 import { LaminationParams } from "@/components/lamination/LaminationParams";
+import { downloadStep, reportStepError, requestStep, stepPayload } from "@/components/lamination/step-export";
 import { INITIAL_PARTS, INITIAL_PARAMETERS, setTargetTransparency, setTargetVisibility, type StatorYokeType, type InstanceState, type MotorParameters, type PartTarget, type PartKey, type StructureType } from "@/components/lamination/model-state";
 
 export const Route = createFileRoute("/lamination")({
@@ -85,6 +86,22 @@ function LaminationPage() {
   const [structure, setStructure] = useState<StructureType>("单定子双转子");
   const [parameters, setParameters] = useState(INITIAL_PARAMETERS);
   const [yokeType, setYokeType] = useState<StatorYokeType>("有定子轭");
+  const entryPayload = useRef(stepPayload(parameters, structure, yokeType));
+  useEffect(() => {
+    const controller = new AbortController();
+    let timedOut = false;
+    // Defer to avoid a duplicate request during Strict Mode's initial effect replay.
+    const timer = setTimeout(() => {
+      void requestStep(entryPayload.current, controller.signal).then((blob) => {
+        if (!controller.signal.aborted) downloadStep(blob);
+      }).catch((error: unknown) => {
+        if (timedOut) reportStepError(new Error("请求超时（120 秒），请检查 STEP 服务"));
+        else if (!controller.signal.aborted) reportStepError(error);
+      }).finally(() => clearTimeout(timeout));
+    }, 0);
+    const timeout = setTimeout(() => { timedOut = true; controller.abort(); }, 120_000);
+    return () => { clearTimeout(timer); clearTimeout(timeout); controller.abort(); };
+  }, []);
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-background text-foreground">
       <TopBar />

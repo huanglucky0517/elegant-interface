@@ -7,3 +7,4 @@
 - Share screen-oriented solid arrowheads between flux and dimension annotations so their direction remains legible during camera rotation.
 - Keep conditional stator-yoke presence and winding phase assignment in pure model-state rules shared by geometry and the part tree; depth-test solid and highlight materials so selection does not bypass physical occlusion.
 - Generate coil sleeves as local rounded hollow extrusions around each tooth, sharing one interaction identity across their axial layers so visibility and selection remain per coil.
+- Call the local STEP service from the browser once per lamination page entry with a parameter snapshot, not from a hosted server; localhost must refer to the visitor's CAD service. Keep binary transport and download helpers separate from viewer geometry.

@@ -8,3 +8,4 @@
 - [x] Add orange highlight, dashed axial directions and mesh display.
 - [x] Link editable dimensions to geometry and annotations; verify interactions and rules.
 - [x] Add conditional stator yoke options with model/tree linkage, fix occlusion and apply three-phase winding colors; verify.
+- [ ] Automatically POST current lamination parameters to the local STEP service on page entry, download binary output, and verify success/failure.

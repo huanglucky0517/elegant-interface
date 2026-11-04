@@ -1,5 +1,5 @@
 # Tasks
-- [ ] Connect current axial-flux inputs to the Docker industrial CAD tool and verify returned STEP display: blocked until the tool name and its exposed API contract/address are provided.
+- [x] Connect axial-flux inputs to Docker service motor-service-test at http://localhost:8000/generate-step; verified full chain (POST payload with 31 params, STEP receipt, download, motor-type switch re-request) against a mock server. Live verification against the real container is blocked: Docker is not available in this sandbox — the container runs on the visitor's machine and must allow CORS from the preview origin.
 - [x] Add motor selector with separate parameter state, remove upper-right part-browser entry.
 - [x] Render local API STEP output instead of illustrative geometry; request again on motor/configuration changes.
 - [x] Verify real STEP fixture parsing, motor switching, independent parameters, click-to-open/close and failed-service state; 30 tests passed.

@@ -1,52 +1,12 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Environment, Lightformer, OrbitControls, Line, Html } from "@react-three/drei";
-import { CanvasTexture, DoubleSide, ExtrudeGeometry, Group, Mesh, MeshStandardMaterial, Path, Shape, SRGBColorSpace, EdgesGeometry, WireframeGeometry, LineBasicMaterial, LineSegments, Vector3 } from "three";
+import { CanvasTexture, DoubleSide, BufferGeometry, Float32BufferAttribute, Box3, Group, Mesh, MeshStandardMaterial, SRGBColorSpace, EdgesGeometry, WireframeGeometry, LineBasicMaterial, LineSegments, Vector3 } from "three";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import { RotateCcw, Minus, Plus, Box } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { HIGHLIGHT_OPACITY, effectivePart, motorDimensions, hasStatorYoke, windingPhase, isPartHighlighted, structureLayers, type StatorYokeType, type InstanceState, type PartTarget, type MotorParameters, type PartKey, type PartState, type StructureType } from "./model-state";
 
-function sectorGeometry(inner: number, outer: number, height: number, angle = Math.PI * 2) {
-  const shape = new Shape();
-  if (angle >= Math.PI * 2) {
-    shape.absarc(0, 0, outer, 0, Math.PI * 2, false);
-    const hole = new Path(); hole.absarc(0, 0, inner, 0, Math.PI * 2, true); shape.holes.push(hole);
-  } else {
-    shape.moveTo(inner, 0); shape.lineTo(outer, 0); shape.absarc(0, 0, outer, 0, angle, false);
-    shape.lineTo(inner * Math.cos(angle), inner * Math.sin(angle)); shape.absarc(0, 0, inner, angle, 0, true); shape.closePath();
-  }
-  const geometry = new ExtrudeGeometry(shape, { depth: height, bevelEnabled: true, bevelSegments: 2, steps: 1, bevelSize: 0.001, bevelThickness: 0.001, curveSegments: 64 });
-  geometry.rotateX(-Math.PI / 2); geometry.translate(0, -height / 2, 0); return geometry;
-}
-function AnnularPart({ inner, outer, height, angle, color, opacity, y, rotation = 0, texture, onClick }: {
-  inner: number; outer: number; height: number; angle?: number; color: string; opacity: number;
-  y: number; rotation?: number; texture?: CanvasTexture; onClick?: () => void;
-}) {
-  const geometry = useMemo(() => sectorGeometry(inner, outer, height, angle), [inner, outer, height, angle]);
-  useEffect(() => () => geometry.dispose(), [geometry]);
-  return <mesh geometry={geometry} position={[0, y, 0]} rotation={[0, rotation, 0]}>
-    <meshStandardMaterial color={color} map={texture} metalness={0.72} roughness={0.34} transparent={opacity < 1} opacity={opacity} depthWrite={opacity >= 1} side={DoubleSide} />
-  </mesh>;
-}
-function ToothCoil({ inner, outer, width, thickness, height, y, color, opacity }: { inner: number; outer: number; width: number; thickness: number; height: number; y: number; color: string; opacity: number }) {
-  const geometry = useMemo(() => {
-    const rounded = (path: Shape | Path, left: number, right: number, halfWidth: number, radius: number) => {
-      path.moveTo(left + radius, -halfWidth);
-      path.lineTo(right - radius, -halfWidth); path.quadraticCurveTo(right, -halfWidth, right, -halfWidth + radius);
-      path.lineTo(right, halfWidth - radius); path.quadraticCurveTo(right, halfWidth, right - radius, halfWidth);
-      path.lineTo(left + radius, halfWidth); path.quadraticCurveTo(left, halfWidth, left, halfWidth - radius);
-      path.lineTo(left, -halfWidth + radius); path.quadraticCurveTo(left, -halfWidth, left + radius, -halfWidth); path.closePath();
-    };
-    const shape = new Shape();
-    rounded(shape, inner - thickness, outer + thickness, width / 2 + thickness, thickness);
-    const hole = new Path(); rounded(hole, inner, outer, width / 2, Math.min(thickness / 2, width / 4)); shape.holes.push(hole);
-    const result = new ExtrudeGeometry(shape, { depth: height, bevelEnabled: true, bevelSize: 0.001, bevelThickness: 0.001, bevelSegments: 2, curveSegments: 12 });
-    result.rotateX(-Math.PI / 2); result.translate(0, -height / 2, 0); return result;
-  }, [inner, outer, width, thickness, height]);
-  useEffect(() => () => geometry.dispose(), [geometry]);
-  return <mesh geometry={geometry} position={[0, y, 0]}><meshStandardMaterial color={color} metalness={0.35} roughness={0.3} transparent={opacity < 1} opacity={opacity} depthWrite={opacity >= 1} /></mesh>;
-}
 function InteractivePart({ target, hovered, selected, instances, parts, showMesh, meshColor, hover, select, highlight, selectionColor, children }: {
   target: PartTarget; selected: PartTarget | null; instances: InstanceState; parts: PartState; showMesh: boolean; meshColor: string; hovered: PartTarget | null; hover: (target: PartTarget | null) => void;
   select: (target: PartTarget) => void; highlight: string; selectionColor: string; children: ReactNode;
@@ -120,57 +80,6 @@ function AnnotationArrow({ tip, from, colorClass = "fill-motor-annotation" }: { 
   });
   return <group ref={group}><Html center position={tip} style={{ pointerEvents: "none" }}><svg ref={arrow} width="16" height="14" viewBox="-16 -7 16 14" className={`overflow-visible ${colorClass}`} style={{ transformOrigin: "100% 50%", marginLeft: -16 }} aria-hidden="true"><path d="M 0 0 L -16 -7 L -16 7 Z" /></svg></Html></group>;
 }
-function Assembly({ parts, structure, parameters, yokeType, showDirection, showMesh, dimension, selected, instances, colors, texture, select, hovered, hover }: {
-  yokeType: StatorYokeType; parts: PartState; structure: StructureType; parameters: MotorParameters; showDirection: boolean;
-  colors: Record<string, string>; texture: CanvasTexture; select: (part: PartTarget) => void;
-  selected: PartTarget | null; instances: InstanceState; showMesh: boolean; dimension: keyof MotorParameters | null;
-  hovered: PartTarget | null; hover: (target: PartTarget | null) => void;
-}) {
-  const layers = structureLayers(structure);
-  const { scale, outerS, innerS, outerR, innerR, statorHeight, rotorHeight } = motorDimensions(parameters);
-  const slots = Math.min(72, Math.max(3, Math.round(parameters.slots)));
-  const poles = Math.min(48, Math.max(2, Math.round(parameters.poles)));
-  const spacing = (statorHeight + rotorHeight) / 2 + Math.max(0, parameters.gap) * scale;
-  const yokeHeight = hasStatorYoke(structure, yokeType) ? Math.max(0.015, Math.min(statorHeight - 0.01, parameters.yokeHeight * scale)) : 0;
-  const backIronHeight = Math.max(0.005, Math.min(rotorHeight - 0.005, parameters.backIron * scale));
-  const magnetHeight = rotorHeight - backIronHeight;
-  const toothAngle = Math.max(0.02, Math.PI * 2 / slots - parameters.slotWidth * scale / ((innerS + outerS) / 2));
-  const coilWidth = Math.max(0.006, (outerS - 0.02) * Math.sin(toothAngle) + 0.006);
-  const coilThickness = Math.max(0.003, Math.min(parameters.slotWidth * scale * 0.22, ((innerS + outerS) / 2) * Math.PI / slots * 0.18));
-  const part = (key: PartKey, id: string, children: ReactNode) => <InteractivePart key={id} target={{ key, id }} hovered={hovered} selected={selected} instances={instances} parts={parts} showMesh={showMesh} meshColor={colors.mesh} hover={hover} select={select} highlight={colors.highlight} selectionColor={colors.annotation}>{children}</InteractivePart>;
-  return <group rotation={[0.12, 0.35, 0]}>
-    {layers.stators.map((layer, index) => <group key={`stator-${index}`}>
-      {parts.stator.visible && <group>
-        {yokeHeight > 0 && part("stator", `core-${index}`, <AnnularPart inner={innerS} outer={outerS} height={yokeHeight} y={layer * spacing - statorHeight / 2 + yokeHeight / 2} color={colors.steel} opacity={parts.stator.opacity} texture={texture} />)}
-        {Array.from({ length: slots }, (_, i) => part("stator", `tooth-${index}-${i}`, <AnnularPart inner={innerS + 0.02} outer={outerS - 0.02} height={statorHeight - yokeHeight} angle={Math.max(0.02, Math.PI * 2 / slots - parameters.slotWidth * scale / ((innerS + outerS) / 2))} rotation={i * Math.PI * 2 / slots} y={layer * spacing + yokeHeight / 2} color={colors.tooth} opacity={parts.stator.opacity} texture={texture} />))}
-      </group>}
-      {parts.winding.visible && Array.from({ length: slots }, (_, i) => part("winding", `coil-${index}-${i}`, <group rotation={[0, i * Math.PI * 2 / slots + toothAngle / 2, 0]}>
-        {Array.from({ length: 2 }, (_, j) => <ToothCoil key={j} inner={innerS + 0.015} outer={outerS - 0.015} width={coilWidth} thickness={coilThickness} height={(statorHeight - yokeHeight) * 0.34} y={layer * spacing + yokeHeight / 2 + (j === 0 ? -1 : 1) * (statorHeight - yokeHeight) * 0.23} color={colors[`phase${windingPhase(i)}`]} opacity={parts.winding.opacity} />)}
-      </group>))}
-    </group>)}
-    {layers.rotors.map((layer, index) => <group key={`rotor-${index}`}>
-      {parts.rotor.visible && part("rotor", `rotor-${index}`, <AnnularPart inner={innerR} outer={outerR} height={backIronHeight} y={layer * spacing + (layer > 0 ? 1 : -1) * magnetHeight / 2} color={colors.steel} opacity={parts.rotor.opacity} texture={texture} />)}
-      {parts.magnet.visible && Array.from({ length: poles }, (_, i) => part("magnet", `magnet-${index}-${i}`, <group>
-        <AnnularPart inner={Math.max(innerR, Math.min(outerR - 0.03, parameters.magnetInner * scale / 2))} outer={Math.max(innerR + 0.03, Math.min(outerR, parameters.magnetOuter * scale / 2))} height={magnetHeight} angle={Math.max(0.02, Math.PI * 2 / poles * Math.min(1, Math.max(0.1, parameters.poleRatio * 1.76)) - parameters.magnetSpacing * scale / ((innerR + outerR) / 2))} rotation={i * Math.PI * 2 / poles} y={layer * spacing + (layer > 0 ? -1 : 1) * backIronHeight / 2} color={colors.magnet} opacity={parts.magnet.opacity} />
-
-      </group>))}
-    </group>)}
-    {showDirection && Array.from({ length: poles }, (_, i) => {
-      const radius = (innerS + outerS) / 2;
-      const angle = -(i + 0.44) * Math.PI * 2 / poles;
-      const x = Math.cos(angle) * radius, z = Math.sin(angle) * radius;
-      const extent = Math.max(...layers.rotors.map(Math.abs), ...layers.stators.map(Math.abs)) * spacing + statorHeight + 0.35;
-      const start: [number, number, number] = [x, i % 2 ? extent : -extent, z];
-      const end: [number, number, number] = [x, i % 2 ? -extent : extent, z];
-      return <group key={`flux-${i}`}><Line points={[start, end]} color={i % 2 ? colors.south : colors.north} lineWidth={2} dashed dashSize={0.045} gapSize={0.03} depthTest={false} toneMapped={false} /><AnnotationArrow tip={end} from={start} colorClass={i % 2 ? "fill-motor-south" : "fill-motor-north"} /></group>;
-    })}
-    {dimension && <DimensionAnnotation parameter={dimension} parameters={parameters} structure={structure} color={colors.annotation} />}
-    {parts.rotor.visible && <group>
-      {part("rotor", "shaft", <mesh><cylinderGeometry args={[0.18, 0.18, Math.max(0.7, spacing * 2 + statorHeight + 0.2), 48]} /><meshStandardMaterial color={colors.steel} metalness={0.85} roughness={0.23} transparent={parts.rotor.opacity < 1} opacity={parts.rotor.opacity} depthWrite={parts.rotor.opacity >= 1} /></mesh>)}
-      {part("rotor", "hub", <mesh><cylinderGeometry args={[0.36, 0.36, Math.max(0.2, spacing * 2 - rotorHeight), 48]} /><meshStandardMaterial color={colors.steel} metalness={0.75} roughness={0.32} transparent={parts.rotor.opacity < 1} opacity={parts.rotor.opacity} depthWrite={parts.rotor.opacity >= 1} /></mesh>)}
-    </group>}
-  </group>;
-}
 function DimensionAnnotation({ parameter, parameters, structure, color }: { parameter: keyof MotorParameters; parameters: MotorParameters; structure: StructureType; color: string }) {
   if (parameter === "slots" || parameter === "poles" || parameter === "poleRatio") return null;
   const dimensions = motorDimensions(parameters);
@@ -192,7 +101,30 @@ function DimensionAnnotation({ parameter, parameters, structure, color }: { para
     <Html center position={labelPosition} style={{ pointerEvents: "none" }}><span role="status" aria-label="模型尺寸" className="whitespace-nowrap rounded border border-motor-annotation bg-card/95 px-2 py-1 text-[24px] font-medium text-motor-annotation">{radial ? "⌀ " : ""}{parameters[parameter]} mm</span></Html>
   </group>;
 }
-export default function MotorViewer(props: { parts: PartState; structure: StructureType; yokeType: StatorYokeType; parameters: MotorParameters; showDirection: boolean; showMesh: boolean; dimension: keyof MotorParameters | null; selected: PartTarget | null; instances: InstanceState; select: (part: PartTarget) => void; clearSelection: () => void; hovered: PartTarget | null; hover: (target: PartTarget | null) => void }) {
+import type { CadPart } from "./step-model";
+import type { MotorType } from "./motor-config";
+
+function CadMesh({ part, color, opacity }: { part: CadPart; color: string; opacity: number }) {
+  const geometry = useMemo(() => {
+    const g = new BufferGeometry();
+    g.setAttribute("position", new Float32BufferAttribute(part.mesh.attributes.position.array, 3));
+    g.setIndex(part.mesh.index.array);
+    if (part.mesh.attributes.normal) g.setAttribute("normal", new Float32BufferAttribute(part.mesh.attributes.normal.array, 3));
+    else g.computeVertexNormals();
+    return g;
+  }, [part]);
+  useEffect(() => () => geometry.dispose(), [geometry]);
+  return <mesh geometry={geometry}><meshStandardMaterial color={color} metalness={0.55} roughness={0.36} side={DoubleSide} opacity={opacity} transparent={opacity < 1} depthWrite={opacity >= 1} /></mesh>;
+}
+
+export default function MotorViewer(props: { cadParts: CadPart[]; status: "loading" | "ready" | "error"; motorType: MotorType; parts: PartState; structure: StructureType; yokeType: StatorYokeType; parameters: MotorParameters; showDirection: boolean; showMesh: boolean; dimension: keyof MotorParameters | null; selected: PartTarget | null; instances: InstanceState; select: (part: PartTarget) => void; clearSelection: () => void; hovered: PartTarget | null; hover: (target: PartTarget | null) => void }) {
+  const frame = useMemo(() => {
+    const box = new Box3();
+    props.cadParts.forEach(part => { const a = part.mesh.attributes.position.array; for (let i = 0; i < a.length; i += 3) box.expandByPoint(new Vector3(a[i], a[i + 1], a[i + 2])); });
+    const center = box.isEmpty() ? new Vector3() : box.getCenter(new Vector3());
+    const size = box.isEmpty() ? new Vector3(1, 1, 1) : box.getSize(new Vector3());
+    return { scale: 2.5 / Math.max(size.x, size.y, size.z, 1), center };
+  }, [props.cadParts]);
   const controls = useRef<OrbitControlsImpl>(null);
   const [ready, setReady] = useState(false);
   const [materials, setMaterials] = useState<{ colors: Record<string, string>; texture: CanvasTexture } | null>(null);
@@ -209,15 +141,26 @@ export default function MotorViewer(props: { parts: PartState; structure: Struct
     const texture = new CanvasTexture(canvas); texture.colorSpace = SRGBColorSpace;
     setMaterials({ colors, texture }); return () => texture.dispose();
   }, []);
-  return <div className="relative h-full min-h-[340px] w-full" data-yoke={hasStatorYoke(props.structure, props.yokeType)} data-scene-ready={ready ? "true" : undefined} data-structure={props.structure} data-mesh={props.showMesh} data-dimension={props.dimension ?? ""} data-hidden-count={Object.values(props.instances).filter((p) => p.visible === false).length}>
+  return <div className="relative h-full min-h-[340px] w-full" data-cad-parts={props.cadParts.length} data-motor-type={props.motorType} data-model-status={props.status} data-yoke={hasStatorYoke(props.structure, props.yokeType)} data-scene-ready={ready ? "true" : undefined} data-structure={props.structure} data-mesh={props.showMesh} data-dimension={props.dimension ?? ""} data-hidden-count={Object.values(props.instances).filter((p) => p.visible === false).length}>
     {materials && <Canvas onPointerMissed={(event) => { if (event.type === "click") props.clearSelection(); }} frameloop="demand" dpr={[1, 1.5]} camera={{ position: [3.8, 3.2, 4.2], fov: 38 }} gl={{ alpha: true, antialias: true }}>
       <ambientLight intensity={1.2} /><directionalLight position={[3, 7, 5]} intensity={3} />
       <Environment resolution={64}><Lightformer intensity={3} color={materials.colors.light} position={[0, 5, 0]} rotation-x={-Math.PI / 2} scale={[10, 10, 1]} /><Lightformer intensity={2} color={materials.colors.light} position={[-5, 1, -1]} rotation-y={Math.PI / 2} scale={[10, 4, 1]} /></Environment>
-      <Assembly {...props} {...materials} />
+      <group scale={frame.scale}><group position={[-frame.center.x, -frame.center.y, -frame.center.z]}>
+        {props.cadParts.map(part => <InteractivePart key={part.id} target={{ key: part.key, id: part.id }} {...props} highlight={materials.colors.highlight} selectionColor={materials.colors.annotation} meshColor={materials.colors.mesh}><CadMesh part={part} color={part.key === "magnet" ? materials.colors.magnet : part.key === "winding" ? materials.colors[/B相|phase.?B/i.test(part.label) ? "phaseB" : /C相|phase.?C/i.test(part.label) ? "phaseC" : "phaseA"] : materials.colors.steel} opacity={props.parts[part.key].opacity} /></InteractivePart>)}
+      </group></group>
+      {props.dimension && props.status === "ready" && <DimensionAnnotation parameter={props.dimension} parameters={props.parameters} structure={props.structure} color={materials.colors.annotation} />}
+      {props.showDirection && props.status === "ready" && props.cadParts.filter(part => part.key === "magnet").map((part, i) => {
+        const box = new Box3(); const a = part.mesh.attributes.position.array;
+        for (let j = 0; j < a.length; j += 3) box.expandByPoint(new Vector3(a[j], a[j + 1], a[j + 2]));
+        const c = box.getCenter(new Vector3()).sub(frame.center).multiplyScalar(frame.scale);
+        const start: [number, number, number] = [c.x, c.y - 1.5, c.z]; const end: [number, number, number] = [c.x, c.y + 1.5, c.z];
+        return <group key={part.id}><Line points={i % 2 ? [end, start] : [start, end]} color={i % 2 ? materials.colors.south : materials.colors.north} lineWidth={2} dashed dashSize={0.045} gapSize={0.03} depthTest={false} /><AnnotationArrow tip={i % 2 ? start : end} from={i % 2 ? end : start} colorClass={i % 2 ? "fill-motor-south" : "fill-motor-north"} /></group>;
+      })}
       <OrbitControls ref={controls} makeDefault enableDamping={false} minDistance={2.5} maxDistance={18} />
       <FitCamera />
       <ReadySignal onReady={() => setReady(true)} />
     </Canvas>}
+    {props.status !== "ready" && <div role="status" className="pointer-events-none absolute inset-0 flex items-center justify-center text-[13px] text-muted-foreground">{props.status === "loading" ? "正在加载工业模型…" : "工业模型加载失败"}</div>}
     <div className="absolute bottom-5 left-1/2 flex -translate-x-1/2 items-center gap-1 rounded-lg border border-border bg-card/95 p-1 shadow-[var(--shadow-card)]">
       <Button size="icon" variant="ghost" title="放大" aria-label="放大模型" onClick={() => { controls.current?.dollyIn(1.2); controls.current?.update(); }}><Plus /></Button>
       <Button size="icon" variant="ghost" title="缩小" aria-label="缩小模型" onClick={() => { controls.current?.dollyOut(1.2); controls.current?.update(); }}><Minus /></Button>

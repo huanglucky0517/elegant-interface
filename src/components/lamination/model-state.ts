@@ -7,12 +7,13 @@ export function hasStatorYoke(structure: StructureType, type: StatorYokeType) {
 }
 export const WINDING_PHASES = ["A", "B", "C"] as const;
 export function windingPhase(index: number) { return WINDING_PHASES[((Math.floor(index / 3) % 3) + 3) % 3]; }
-export type PartKey = "rotor" | "stator" | "magnet" | "winding";
-export const PART_LABELS: Record<PartKey, string> = { rotor: "转子", stator: "定子", magnet: "磁钢", winding: "绕组" };
+export type PartKey = "rotor" | "stator" | "magnet" | "winding" | "other";
+export const PART_LABELS: Record<PartKey, string> = { rotor: "转子", stator: "定子", magnet: "磁钢", winding: "绕组", other: "其他零部件" };
 export type PartState = Record<PartKey, { visible: boolean; opacity: number }>;
 export const INITIAL_PARTS: PartState = {
   rotor: { visible: true, opacity: 1 }, stator: { visible: true, opacity: 1 },
   magnet: { visible: true, opacity: 1 }, winding: { visible: true, opacity: 1 },
+  other: { visible: true, opacity: 1 },
 };
 export function structureLayers(type: StructureType) {
   if (type === "双定子单转子") return { stators: [-1, 1], rotors: [0] };
@@ -62,6 +63,7 @@ export function motorDimensions(p: MotorParameters) {
   return { scale, outerS, outerR, innerS: Math.max(0.05, Math.min(outerS - 0.03, p.statorInner * scale / 2)), innerR: Math.max(0.05, Math.min(outerR - 0.03, p.rotorInner * scale / 2)), statorHeight: Math.max(0.03, p.statorHeight * scale), rotorHeight: Math.max(0.03, p.rotorHeight * scale) };
 }
 export function partComponents(key: PartKey, structure: StructureType, parameters: MotorParameters, yokeType: StatorYokeType = "有定子轭"): PartComponent[] {
+  if (key === 'other') return [];
   const layers = structureLayers(structure);
   const slots = Math.min(72, Math.max(3, Math.round(parameters.slots)));
   const poles = Math.min(48, Math.max(2, Math.round(parameters.poles)));

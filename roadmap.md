@@ -1,4 +1,5 @@
 # Tasks
+- [ ] Connect current axial-flux inputs to the Docker industrial CAD tool and verify returned STEP display: blocked until the tool name and its exposed API contract/address are provided.
 - [x] Add motor selector with separate parameter state, remove upper-right part-browser entry.
 - [x] Render local API STEP output instead of illustrative geometry; request again on motor/configuration changes.
 - [x] Verify real STEP fixture parsing, motor switching, independent parameters, click-to-open/close and failed-service state; 30 tests passed.

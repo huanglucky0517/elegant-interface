@@ -1,9 +1,11 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { CheckCircle2, ChevronDown, X, Zap, Thermometer, Activity, Volume2, FileText, GitBranch, Image as ImageIcon, Table2, Check } from "lucide-react";
 import { LeftNav, TopBar } from "@/components/workspace/Chrome";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { initialMotorConfigs, type MotorType, type MotorConfig } from "@/components/lamination/motor-config";
+import { parseStep, cadParts, type StepModel } from "@/components/lamination/step-model";
 import MotorViewer from "@/components/lamination/MotorViewer";
 import { PartsPanel } from "@/components/lamination/PartsPanel";
 import { LaminationParams } from "@/components/lamination/LaminationParams";
@@ -83,24 +85,36 @@ function LaminationPage() {
   const [paramsOpen, setParamsOpen] = useState(true);
   const [selectedPart, setSelectedPart] = useState<PartTarget | null>(null);
   const [parts, setParts] = useState(INITIAL_PARTS);
-  const [structure, setStructure] = useState<StructureType>("单定子双转子");
-  const [parameters, setParameters] = useState(INITIAL_PARAMETERS);
-  const [yokeType, setYokeType] = useState<StatorYokeType>("有定子轭");
-  const entryPayload = useRef(stepPayload(parameters, structure, yokeType));
+  const [motorType, setMotorType] = useState<MotorType>("轴向磁通电机");
+  const [configs, setConfigs] = useState(initialMotorConfigs);
+  const { parameters, structure, yokeType, details } = configs[motorType];
+  const updateConfig = (update: Partial<MotorConfig>) => setConfigs(c => ({ ...c, [motorType]: { ...c[motorType], ...update } }));
+  const [model, setModel] = useState<StepModel | null>(null);
+  const [modelStatus, setModelStatus] = useState<"loading" | "ready" | "error">("loading");
+  const components = useMemo(() => model ? cadParts(model) : [], [model]);
+  const payload = useMemo(() => stepPayload(parameters, structure, yokeType, motorType, details), [parameters, structure, yokeType, motorType, details]);
   useEffect(() => {
     const controller = new AbortController();
     let timedOut = false;
-    // Defer to avoid a duplicate request during Strict Mode's initial effect replay.
+    setModel(null); setModelStatus("loading"); setSelectedPart(null); setHovered(null); setInstances({});
+    // Debounce parameter edits; StrictMode replay never launches a duplicate request.
     const timer = setTimeout(() => {
-      void requestStep(entryPayload.current, controller.signal).then((blob) => {
-        if (!controller.signal.aborted) downloadStep(blob);
+      void requestStep(payload, controller.signal).then(async blob => {
+        if (controller.signal.aborted) return;
+        downloadStep(blob);
+        const parsed = await parseStep(blob, controller.signal);
+        if (!controller.signal.aborted) { setModel(parsed); setModelStatus("ready"); }
       }).catch((error: unknown) => {
-        if (timedOut) reportStepError(new Error("请求超时（120 秒），请检查 STEP 服务"));
-        else if (!controller.signal.aborted) reportStepError(error);
+        if (timedOut || !controller.signal.aborted) {
+          reportStepError(timedOut ? new Error("请求或解析超时（120 秒）") : error);
+          setModelStatus("error");
+        }
       }).finally(() => clearTimeout(timeout));
-    }, 0);
+    }, 350);
     const timeout = setTimeout(() => { timedOut = true; controller.abort(); }, 120_000);
     return () => { clearTimeout(timer); clearTimeout(timeout); controller.abort(); };
+  }, [payload]);
+  return () => { clearTimeout(timer); clearTimeout(timeout); controller.abort(); };
   }, []);
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-background text-foreground">
@@ -109,17 +123,16 @@ function LaminationPage() {
         <LeftNav />
         <div className="flex min-w-[860px] flex-1">
           <main className="lamination-grid relative min-w-0 flex-1 overflow-hidden bg-card">
-            <div className="absolute inset-x-4 top-5 z-10 text-center text-[13px]">易泰达驱动电机冲片-副本（轴向磁通）</div>
+            <div className="absolute inset-x-4 top-5 z-10 text-center text-[13px]">易泰达驱动电机冲片-副本（{motorType}）</div>
             <div className={cn("absolute top-5 z-30 flex gap-2", paramsOpen ? "right-4" : "left-4")}>
               {!paramsOpen && <Button variant="outline" size="sm" onClick={() => setParamsOpen(true)}>指定冲片</Button>}
-              {!partsOpen && <Button variant="outline" size="sm" onClick={() => setPartsOpen(true)}>三维零部件结构</Button>}
             </div>
             <div className={`h-full w-full pt-12 ${paramsOpen ? "pl-[280px]" : ""} ${partsOpen ? "pr-[256px]" : ""}`}>
-              <MotorViewer yokeType={yokeType} parameters={parameters} structure={structure} parts={parts} showDirection={showDir} showMesh={showMesh} dimension={dimension} selected={selectedPart} instances={instances} hovered={hovered} hover={setHovered} clearSelection={() => { setSelectedPart(null); setHovered(null); }} select={(target) => { setSelectedPart(target); setPartsOpen(true); }} />
+              <MotorViewer cadParts={components} status={modelStatus} motorType={motorType} yokeType={yokeType} parameters={parameters} structure={structure} parts={parts} showDirection={showDir} showMesh={showMesh} dimension={dimension} selected={selectedPart} instances={instances} hovered={hovered} hover={setHovered} clearSelection={() => { setSelectedPart(null); setHovered(null); }} select={(target) => { setSelectedPart(target); setPartsOpen(true); }} />
             </div>
-            {paramsOpen && <div className="absolute bottom-24 left-4 top-5 z-20 w-[264px]"><LaminationParams yokeType={yokeType} onYokeType={(type) => { setYokeType(type); setSelectedPart(null); setHovered(null); }} parameters={parameters} structure={structure} onStructure={setStructure} onDimension={setDimension} onParameter={(key, value) => { if (!Number.isFinite(value)) return; setParameters((p) => ({ ...p, [key]: value })); setDimension(key); }} onClose={() => { setParamsOpen(false); setDimension(null); }} /></div>}
+            {paramsOpen && <div className="absolute bottom-24 left-4 top-5 z-20 w-[264px]"><LaminationParams motorType={motorType} onMotorType={type => { setMotorType(type); setParts(INITIAL_PARTS); setPartsOpen(false); setDimension(null); }} details={details} onDetail={(key, value) => updateConfig({ details: { ...details, [key]: value } })} yokeType={yokeType} onYokeType={(type) => { updateConfig({ yokeType: type }); setSelectedPart(null); setHovered(null); }} parameters={parameters} structure={structure} onStructure={type => updateConfig({ structure: type })} onDimension={setDimension} onParameter={(key, value) => { if (!Number.isFinite(value)) return; updateConfig({ parameters: { ...parameters, [key]: value } }); setDimension(key); }} onClose={() => { setParamsOpen(false); setDimension(null); }} /></div>}
             <div className="absolute bottom-24 right-4 top-5 z-20 flex w-[236px] flex-col items-stretch gap-3 pointer-events-none">
-              {partsOpen && <div className="pointer-events-auto flex min-h-0 flex-col"><PartsPanel yokeType={yokeType} parts={parts} selected={selectedPart} structure={structure} parameters={parameters} onHover={setHovered} hovered={hovered} instances={instances} onSelect={setSelectedPart} onVisibility={(target, visible) => { const next = setTargetVisibility(parts, instances, target, visible); setParts(next.parts); setInstances(next.instances); }} onTransparency={(target, percent) => { const next = setTargetTransparency(parts, instances, target, percent); setParts(next.parts); setInstances(next.instances); }} onClose={() => { setPartsOpen(false); setHovered(null); setSelectedPart(null); }} /></div>}
+              {partsOpen && <div className="pointer-events-auto flex min-h-0 flex-col"><PartsPanel cadParts={components} motorType={motorType} yokeType={yokeType} parts={parts} selected={selectedPart} structure={structure} parameters={parameters} onHover={setHovered} hovered={hovered} instances={instances} onSelect={setSelectedPart} onVisibility={(target, visible) => { const next = setTargetVisibility(parts, instances, target, visible); setParts(next.parts); setInstances(next.instances); }} onTransparency={(target, percent) => { const next = setTargetTransparency(parts, instances, target, percent); setParts(next.parts); setInstances(next.instances); }} onClose={() => { setPartsOpen(false); setHovered(null); setSelectedPart(null); }} /></div>}
               <div className="pointer-events-auto shrink-0 w-full rounded-md border border-border bg-card/95 px-3 py-2 shadow-[var(--shadow-card)]">
                 <label className="inline-flex items-center gap-2 text-[12px]"><input type="checkbox" checked={showDir} onChange={(e) => setShowDir(e.target.checked)} className="accent-primary" />显示充磁方向</label>
                 <label className="mt-2 flex items-center gap-2 text-[12px]"><input type="checkbox" checked={showMesh} onChange={(e) => setShowMesh(e.target.checked)} className="accent-primary" />显示网格剖分</label>

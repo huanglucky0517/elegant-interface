@@ -3,8 +3,11 @@ import { Box, ChevronDown, Eye, EyeOff, Layers, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { PART_LABELS, partComponents, effectivePart, isPartHighlighted, type StatorYokeType, type InstanceState, type MotorParameters, type PartTarget, type StructureType, type PartKey, type PartState } from "./model-state";
-const sphereColors: Record<PartKey, string> = { rotor: "bg-motor-steel", stator: "bg-motor-steel", magnet: "bg-motor-magnet", winding: "bg-motor-copper" };
-export function PartsPanel({ parts, selected, onSelect, onVisibility, onTransparency, onClose, structure, parameters, yokeType, onHover, hovered, instances }: {
+import type { CadPart } from "./step-model";
+import type { MotorType } from "./motor-config";
+const sphereColors: Record<PartKey, string> = { rotor: "bg-motor-steel", stator: "bg-motor-steel", magnet: "bg-motor-magnet", winding: "bg-motor-copper", other: "bg-motor-steel" };
+export function PartsPanel({ cadParts, motorType, parts, selected, onSelect, onVisibility, onTransparency, onClose, structure, parameters, yokeType, onHover, hovered, instances }: {
+  cadParts: CadPart[]; motorType: MotorType;
   yokeType: StatorYokeType;
   parts: PartState; selected: PartTarget | null; onSelect: (part: PartTarget) => void;
   onVisibility: (part: PartTarget, visible: boolean) => void;
@@ -15,12 +18,12 @@ export function PartsPanel({ parts, selected, onSelect, onVisibility, onTranspar
   const [expanded, setExpanded] = useState(true);
   const [openParts, setOpenParts] = useState<Partial<Record<PartKey, boolean>>>({});
   const transparency = selected ? Math.round((1 - effectivePart(parts, instances, selected).opacity) * 100) : 0;
-  const selectedLabel = selected ? (selected.id ? partComponents(selected.key, structure, parameters, yokeType).find((p) => p.id === selected.id)?.label ?? PART_LABELS[selected.key] : PART_LABELS[selected.key]) : "";
+  const selectedLabel = selected ? (selected.id ? cadParts.filter(p => p.key === selected.key).find((p) => p.id === selected.id)?.label ?? PART_LABELS[selected.key] : PART_LABELS[selected.key]) : "";
   return <section aria-label="三维零部件结构" className="flex min-h-0 flex-col overflow-hidden rounded-lg border border-border bg-card/95 shadow-[var(--shadow-card)]" onMouseLeave={() => onHover(null)}>
     <header className="flex items-center gap-2 border-b border-border px-3 py-2"><Layers className="h-4 w-4 text-primary" /><h2 className="flex-1 text-[13px] font-semibold">三维零部件结构</h2><Button variant="ghost" size="icon" className="h-6 w-6" aria-label="关闭零部件结构" onClick={onClose}><X /></Button></header>
-    <Button variant="ghost" className="h-10 w-full justify-start rounded-none px-3 text-[12px]" onClick={() => setExpanded(!expanded)} aria-expanded={expanded}><ChevronDown className={cn(!expanded && "-rotate-90")} /><Box className="text-primary" /><span>轴向磁通电机</span></Button>
-    {expanded && <div className="min-h-0 overflow-y-auto pb-2">{(Object.keys(PART_LABELS) as PartKey[]).map((key) => {
-      const components = partComponents(key, structure, parameters, yokeType);
+    <Button variant="ghost" className="h-10 w-full justify-start rounded-none px-3 text-[12px]" onClick={() => setExpanded(!expanded)} aria-expanded={expanded}><ChevronDown className={cn(!expanded && "-rotate-90")} /><Box className="text-primary" /><span>{motorType}</span></Button>
+    {expanded && <div className="min-h-0 overflow-y-auto pb-2">{(Object.keys(PART_LABELS) as PartKey[]).filter(key => cadParts.some(p => p.key === key)).map((key) => {
+      const components = cadParts.filter(p => p.key === key);
       return <div key={key}>
         <div onMouseEnter={() => onHover({ key })} onMouseLeave={() => onHover(null)} className={cn("flex h-10 items-center gap-1 pl-5 pr-2", (isPartHighlighted(selected, key, "") || isPartHighlighted(hovered, key, "")) && "bg-motor-highlight/10 ring-1 ring-inset ring-motor-highlight")}>
           <Button size="icon" variant="ghost" className="group h-7 w-7 shrink-0" aria-label={`${openParts[key] ? "收起" : "展开"}${PART_LABELS[key]}分部件`} title={`${openParts[key] ? "收起" : "展开"}${PART_LABELS[key]}分部件`} aria-expanded={!!openParts[key]} onClick={() => setOpenParts((p) => ({ ...p, [key]: !p[key] }))}>

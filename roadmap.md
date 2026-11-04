@@ -1,7 +1,8 @@
 # Tasks
-- [ ] Add motor selector with separate parameter state, remove upper-right part-browser entry.
-- [ ] Render local API STEP output instead of illustrative geometry; request again on motor/configuration changes.
-- [ ] Verify actual STEP parsing, model switching and part interaction; report local service availability.
+- [x] Add motor selector with separate parameter state, remove upper-right part-browser entry.
+- [x] Render local API STEP output instead of illustrative geometry; request again on motor/configuration changes.
+- [x] Verify real STEP fixture parsing, motor switching, independent parameters, click-to-open/close and failed-service state; 30 tests passed.
+- [ ] Validate actual motor models from the visitor's CAD service: blocked until localhost:8000 is running and supports motorType/topology; synchronous defaults are editable example values.
 - [x] Replace lamination image with assembled interactive axial-flux model and part controls.
 - [x] Reorganize shared and stator/rotor parameters from references.
 - [x] Verify model, controls, structure types and parameter tabs.

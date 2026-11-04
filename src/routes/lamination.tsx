@@ -114,8 +114,6 @@ function LaminationPage() {
     const timeout = setTimeout(() => { timedOut = true; controller.abort(); }, 120_000);
     return () => { clearTimeout(timer); clearTimeout(timeout); controller.abort(); };
   }, [payload]);
-  return () => { clearTimeout(timer); clearTimeout(timeout); controller.abort(); };
-  }, []);
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-background text-foreground">
       <TopBar />

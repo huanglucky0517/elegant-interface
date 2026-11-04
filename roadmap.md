@@ -1,4 +1,7 @@
 # Tasks
+- [ ] Add motor selector with separate parameter state, remove upper-right part-browser entry.
+- [ ] Render local API STEP output instead of illustrative geometry; request again on motor/configuration changes.
+- [ ] Verify actual STEP parsing, model switching and part interaction; report local service availability.
 - [x] Replace lamination image with assembled interactive axial-flux model and part controls.
 - [x] Reorganize shared and stator/rotor parameters from references.
 - [x] Verify model, controls, structure types and parameter tabs.
